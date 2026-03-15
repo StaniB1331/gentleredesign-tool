@@ -301,6 +301,7 @@ footer{background:var(--ink);padding:18px 64px;display:flex;justify-content:spac
   .hero-cta,.score-summary{flex-direction:column}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -356,7 +357,7 @@ footer{background:var(--ink);padding:18px 64px;display:flex;justify-content:spac
   <div class="tb-url" id="tbUrl"></div>
   <div style="display:flex;gap:7px">
     <button class="tbtn tbtn-g" onclick="resetAll()">Zurücksetzen</button>
-    <button class="tbtn tbtn-d" onclick="window.print()">Als PDF</button>
+    <button class="tbtn tbtn-d" onclick="downloadPDF()">Als PDF ↓</button>
   </div>
 </div>
 
@@ -841,7 +842,8 @@ async function generateHero(){
     if(errDiv){errDiv.textContent='Fehler: '+err.message+' — Bitte erneut versuchen.';errDiv.style.display='block';}
   }
 }
-function fbef(n){return'<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#f0f0f0;color:#333}nav{background:#fff;padding:12px 24px;border-bottom:2px solid #ccc;display:flex;align-items:center;justify-content:space-between}.logo{font-size:17px;font-weight:bold}.nl{display:flex;gap:14px}.nl a{font-size:12px;color:#555;text-decoration:none}.hero{padding:48px 32px;background:#fff;text-align:center;border-bottom:1px solid #ddd}.badge{display:inline-block;background:#fff3cd;color:#856404;font-size:9px;padding:3px 8px;border:1px solid #ffc107;margin-bottom:12px}h1{font-size:24px;font-weight:bold;margin-bottom:9px;line-height:1.3}p{font-size:13px;color:#666;max-width:480px;margin:0 auto 20px;line-height:1.55}.cta{background:#337ab7;color:#fff;padding:9px 22px;border:none;font-size:13px;cursor:pointer;border-radius:3px}</style></head><body><nav><div class="logo">'+n+'</div><div class="nl"><a href="#">Über uns</a><a href="#">Leistungen</a><a href="#">Kontakt</a></div></nav><div class="hero"><div class="badge">⚠ Veraltetes Design · Generischer CTA · Kein Wertversprechen</div><h1>Willkommen bei '+n+'</h1><p>Wir sind Ihr zuverlässiger Partner für professionelle Lösungen. Seit vielen Jahren bieten wir erstklassigen Service.</p><button class="cta">Mehr erfahren</button></div></body></html>';}
+function fbef(n){return'<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#f0f0f0;color:#333}nav{background:#fff;padding:12px 24px;border-bottom:2px solid #ccc;display:flex;align-items:center;justify-content:space-between}.logo{font-size:17px;font-weight:bold}.nl{display:flex;gap:14px}.nl a{font-size:12px;color:#555;text-decoration:none}.hero{padding:48px 32px;background:#fff;text-align:center;border-bottom:1px solid #ddd}.badge{display:inline-block;background:#fff3cd;color:#856404;font-size:9px;padding:3px 8px;border:1px solid #ffc107;margin-bottom:12px}h1{font-size:24px;font-weight:bold;margin-bottom:9px;line-height:1.3}p{font-size:13px;color:#666;max-width:480px;margin:0 auto 20px;line-height:1.55}.cta{background:#337ab7;color:#fff;padding:9px 22px;border:none;font-size:13px;cursor:pointer;border-radius:3px}</style><script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head><body><nav><div class="logo">'+n+'</div><div class="nl"><a href="#">Über uns</a><a href="#">Leistungen</a><a href="#">Kontakt</a></div></nav><div class="hero"><div class="badge">⚠ Veraltetes Design · Generischer CTA · Kein Wertversprechen</div><h1>Willkommen bei '+n+'</h1><p>Wir sind Ihr zuverlässiger Partner für professionelle Lösungen. Seit vielen Jahren bieten wir erstklassigen Service.</p><button class="cta">Mehr erfahren</button></div></body></html>';}
 function switchTab(t){
   document.querySelectorAll('.ho-tab').forEach((e,i)=>e.classList.toggle('active',['preview','compare','code'][i]===t));
   document.querySelectorAll('.ho-panel').forEach(p=>p.classList.remove('active'));
@@ -860,6 +862,236 @@ function downloadHero(){
   URL.revokeObjectURL(a.href);
 }
 function copyCode(){navigator.clipboard.writeText(heroCode).then(()=>{const b=document.getElementById('codeCp');b.textContent='Kopiert ✓';b.classList.add('copied');setTimeout(()=>{b.textContent='Kopieren';b.classList.remove('copied');},2500);});}
+
+// ─── PDF Download ──────────────────────────────────────────────────────────
+function downloadPDF(){
+  const { jsPDF } = window.jspdf;
+  if(!jsPDF){alert('PDF-Library lädt noch — bitte kurz warten.');return;}
+  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210, M=18;
+  let y=20;
+
+  // Colors
+  const gold=[184,146,62];
+  const ink=[20,18,16];
+  const stone=[122,118,112];
+  const cream=[247,244,239];
+  const red=[176,58,46];
+  const orange=[202,111,30];
+  const green=[30,132,73];
+
+  function hex2rgb(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return[r,g,b];}
+  function scoreColor(s){return s>=75?green:s>=50?orange:red;}
+
+  // ── HEADER ──
+  doc.setFillColor(...ink);
+  doc.rect(0,0,W,42,'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(20);
+  doc.setTextColor(255,255,255);
+  doc.text('Website Audit Report',M,16);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...gold);
+  doc.text('Gentle Redesign · Berlin · gentleredesign.de',M,23);
+
+  // Brand name & URL
+  const bname = document.getElementById('bName')?.value||'';
+  const url = document.getElementById('scanUrl')?.value||'';
+  if(bname||url){
+    doc.setTextColor(200,200,200);
+    doc.setFontSize(8);
+    if(bname)doc.text(bname,M,30);
+    if(url)doc.text(url,bname?M+doc.getTextWidth(bname)+4:M,30);
+  }
+
+  // Overall score
+  const checked=document.querySelectorAll('.cb.on,.cb.ai-on').length;
+  const overall=Math.round((1-checked/42)*100);
+  const sc=scoreColor(overall);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(28);
+  doc.setTextColor(...sc);
+  doc.text(overall+'/100',W-M,22,{align:'right'});
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...gold);
+  doc.text('Audit Score',W-M,29,{align:'right'});
+  y=52;
+
+  // ── CATEGORY SCORES ──
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...ink);
+  doc.text('Kategorie-Scores',M,y);
+  y+=6;
+
+  const cats={design:{label:'Design',max:6},brand:{label:'Brand',max:5},hero:{label:'Hero & Struktur',max:7},mobile:{label:'Mobile',max:5},trust:{label:'Trust',max:5},seo:{label:'SEO',max:5},legal:{label:'Rechtliches',max:4}};
+  const barW=W-M*2-30;
+  Object.entries(cats).forEach(([cat,meta])=>{
+    const done=document.querySelectorAll('[data-cat="'+cat+'"] .cb.on,[data-cat="'+cat+'"] .cb.ai-on').length;
+    const score=Math.round((1-done/meta.max)*100);
+    const col=scoreColor(score);
+    // Label
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...stone);
+    doc.text(meta.label,M,y+3);
+    // Track
+    doc.setFillColor(220,218,214);
+    doc.rect(M+30,y,barW,3,'F');
+    // Fill
+    doc.setFillColor(...col);
+    doc.rect(M+30,y,barW*score/100,3,'F');
+    // Score
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...col);
+    doc.text(score+'%',W-M,y+3,{align:'right'});
+    y+=8;
+  });
+  y+=4;
+
+  // ── DIVIDER ──
+  doc.setDrawColor(...gold);
+  doc.setLineWidth(0.3);
+  doc.line(M,y,W-M,y);
+  y+=8;
+
+  // ── TOP PROBLEMS ──
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...ink);
+  doc.text('Identifizierte Probleme',M,y);
+  y+=6;
+
+  const sevColor={c:red,h:orange,m:gold};
+  const sevLabel={c:'Kritisch',h:'Hoch',m:'Mittel'};
+  const problems=[...document.querySelectorAll('.cb.on,.cb.ai-on')].map(cb=>{
+    const item=cb.closest('.item');
+    const lbl=item.querySelector('.item-lbl').textContent;
+    const note=item.querySelector('.item-note')?.textContent||'';
+    const tag=item.querySelector('.tag');
+    const sev=tag.classList.contains('c')?'c':tag.classList.contains('h')?'h':'m';
+    return{lbl,note,sev};
+  }).sort((a,b)=>{const o={c:0,h:1,m:2};return o[a.sev]-o[b.sev];});
+
+  problems.slice(0,14).forEach((p,i)=>{
+    if(y>260){doc.addPage();y=20;}
+    const col=sevColor[p.sev]||stone;
+    // Severity dot
+    doc.setFillColor(...col);
+    doc.circle(M+2,y+1.5,1.5,'F');
+    // Label
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...ink);
+    doc.text(p.lbl,M+6,y+3);
+    // Sev badge
+    doc.setFontSize(6.5);
+    doc.setTextColor(...col);
+    doc.text(sevLabel[p.sev],W-M,y+3,{align:'right'});
+    y+=5.5;
+    // AI note if present
+    if(p.note&&p.note.trim().length>2){
+      doc.setFontSize(7);
+      doc.setTextColor(...stone);
+      const noteLines=doc.splitTextToSize(p.note,W-M*2-8);
+      noteLines.slice(0,1).forEach(line=>{
+        doc.text(line,M+6,y+2);
+        y+=4;
+      });
+    }
+  });
+
+  y+=4;
+  // ── DIVIDER ──
+  doc.setDrawColor(...gold);
+  doc.line(M,y,W-M,y);
+  y+=8;
+
+  // ── BRAND PROFILE ──
+  const bcat=document.getElementById('bCat')?.value;
+  const bprod=document.getElementById('bProd')||document.getElementById('bProduct');
+  const baud=document.getElementById('bAud')||document.getElementById('bAudience');
+  const busp=document.getElementById('bUSP');
+  const btoner=document.getElementById('bToneR')||document.getElementById('bToneRec');
+
+  if(bname||bcat){
+    if(y>240){doc.addPage();y=20;}
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...ink);
+    doc.text('Brand-Profil',M,y);
+    y+=6;
+
+    const fields=[
+      ['Unternehmen',bname],
+      ['Branche',bcat],
+      ['Produkt',bprod?.value],
+      ['Zielgruppe',baud?.value],
+      ['USP',busp?.value],
+      ['Empf. Tonalität',btoner?.value],
+    ].filter(([,v])=>v&&v.trim());
+
+    fields.forEach(([label,val])=>{
+      if(y>270){doc.addPage();y=20;}
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...stone);
+      doc.text(label+':',M,y+3);
+      doc.setFont('helvetica','normal');
+      doc.setTextColor(...ink);
+      const lines=doc.splitTextToSize(val,W-M*2-28);
+      lines.slice(0,2).forEach((line,i)=>{doc.text(line,M+28,y+3+(i*4));});
+      y+=Math.min(lines.length,2)*4+2;
+    });
+    y+=4;
+  }
+
+  // ── AI SUMMARY ──
+  const sumText=document.getElementById('aiSumText')?.textContent;
+  const sumOpp=document.getElementById('aiSumOppText')?.textContent||document.getElementById('aiSumOpp')?.textContent;
+  if(sumText&&sumText.trim()){
+    if(y>240){doc.addPage();y=20;}
+    doc.setFillColor(...cream);
+    const sumLines=doc.splitTextToSize(sumText,W-M*2-8);
+    const boxH=sumLines.length*4.5+12;
+    doc.rect(M,y,W-M*2,boxH,'F');
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.5);
+    doc.rect(M,y,3,boxH,'F');
+    doc.setLineWidth(0.3);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...gold);
+    doc.text('KI-Analyse',M+6,y+5);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...stone);
+    sumLines.forEach((line,i)=>{doc.text(line,M+6,y+10+i*4.5);});
+    y+=boxH+6;
+  }
+
+  // ── FOOTER ──
+  const pageCount=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){
+    doc.setPage(i);
+    doc.setFillColor(...ink);
+    doc.rect(0,287,W,10,'F');
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...gold);
+    doc.text('Gentle Redesign · Berlin · info@gentleredesign.de · gentleredesign.de',M,293);
+    doc.setTextColor(100,100,100);
+    doc.text('Seite '+i+' / '+pageCount,W-M,293,{align:'right'});
+  }
+
+  // ── SAVE ──
+  const name=(document.getElementById('bName')?.value||'audit').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')||'website-audit';
+  doc.save(name+'-gentle-redesign-audit.pdf');
+}
+
 document.getElementById('scanUrl').addEventListener('keydown',e=>{if(e.key==='Enter')runAudit();});
 
 // ─── Cold Mail inline ──────────────────────────────────────────────────────
