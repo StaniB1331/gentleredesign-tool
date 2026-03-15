@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gentle Redesign — Website Audit & Hero Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#B8923E;--gold-l:rgba(184,146,62,.09);
+  --ink:#141210;--ink2:#1E1C19;
+  --stone:#7A7670;--stone2:#5A5650;
+  --cream:#F7F4EF;--warm:#FDFCF9;
+  --border:rgba(184,146,62,.18);--soft:rgba(0,0,0,.055);
+}
+@media print{.no-print{display:none!important}.cover{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+html{scroll-behavior:smooth}
+body{background:var(--warm);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;max-width:940px;margin:0 auto}
+
+/* COVER */
+.cover{background:var(--ink);padding:52px 64px 44px;position:relative;overflow:hidden}
+.cover::after{content:'G';position:absolute;right:-20px;top:-60px;font-family:'Cormorant Garamond',serif;font-size:360px;color:rgba(255,255,255,.025);line-height:1;pointer-events:none}
+.kicker{font-size:.58rem;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.kicker::before{content:'';width:20px;height:1px;background:var(--gold)}
+.cover h1{font-family:'Cormorant Garamond',serif;font-size:3.2rem;font-weight:300;color:white;line-height:1.05;margin-bottom:12px}
+.cover h1 em{font-style:italic;color:var(--gold)}
+.cover-sub{font-size:.84rem;color:rgba(255,255,255,.35);line-height:1.72;max-width:480px;margin-bottom:36px}
+.cover-meta{display:flex;gap:32px}
+.stat{border-top:1px solid rgba(184,146,62,.2);padding-top:11px}
+.stat-num{font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:var(--gold);line-height:1;font-style:italic}
+.stat-lbl{font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.2);margin-top:3px}
+
+/* SCAN BAR */
+.scan-bar{background:var(--ink);border-top:1px solid rgba(184,146,62,.14);padding:26px 64px 30px}
+.scan-bar-label{font-size:.58rem;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:13px;display:flex;align-items:center;gap:9px}
+.scan-bar-label::before{content:'';width:18px;height:1px;background:var(--gold)}
+.scan-row{display:flex;gap:0;border:1px solid rgba(255,255,255,.1);transition:border-color .2s}
+.scan-row:focus-within{border-color:var(--gold)}
+.scan-input{flex:1;background:rgba(255,255,255,.045);border:none;color:white;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:300;padding:13px 16px;outline:none}
+.scan-input::placeholder{color:rgba(255,255,255,.2)}
+.scan-btn{background:var(--gold);color:#fff;border:none;padding:0 26px;font-size:.63rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:background .2s;white-space:nowrap;flex-shrink:0}
+.scan-btn:hover{background:#c9a450}
+.scan-btn:disabled{opacity:.38;cursor:not-allowed}
+.scan-status{display:none;align-items:center;gap:10px;margin-top:10px}
+.scan-status.show{display:flex}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--stone2);flex-shrink:0}
+.sdot.run{background:var(--gold);animation:pulse 1s ease-in-out infinite}
+.sdot.ok{background:#1e8449}
+.sdot.err{background:#c0392b}
+.stxt{font-size:.74rem;color:rgba(255,255,255,.42)}
+.scan-prog{display:none;gap:0;margin-top:13px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+.scan-prog.show{display:flex}
+.sp{flex:1;padding:7px 6px;text-align:center;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.18);border-top:2px solid transparent;transition:all .3s}
+.sp.run{color:var(--gold);border-top-color:var(--gold)}
+.sp.done{color:rgba(39,174,96,.6);border-top-color:rgba(39,174,96,.4)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* TOOLBAR */
+.toolbar{position:sticky;top:0;z-index:100;background:rgba(253,252,249,.97);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:9px 64px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tb-info{font-size:.74rem;color:var(--stone);flex-shrink:0}
+.tb-info strong{color:var(--gold);font-weight:500}
+.tb-url{font-size:.68rem;color:var(--stone2);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:0;transition:opacity .3s}
+.tb-url.show{opacity:.55}
+.tbtn{font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;padding:7px 15px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.tbtn-g{background:transparent;border:1px solid var(--soft);color:var(--stone)}
+.tbtn-g:hover{border-color:var(--ink);color:var(--ink)}
+.tbtn-d{background:var(--ink);color:var(--warm)}
+.tbtn-d:hover{background:var(--gold)}
+
+/* REPORT PANEL */
+.report-panel{max-height:0;overflow:hidden;transition:max-height .8s cubic-bezier(.4,0,.2,1)}
+.report-panel.open{max-height:2400px}
+.score-summary{background:var(--ink);padding:24px 64px;display:none;align-items:center;flex-wrap:wrap;gap:20px}
+.score-summary.show{display:flex}
+.sos-num{font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-style:italic;line-height:1}
+.sos-grade{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;border:1px solid;margin-top:4px;display:inline-block}
+.cat-bars-row{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:rgba(184,146,62,.08);border:1px solid rgba(184,146,62,.1);flex:1;min-width:320px}
+.cb-col{background:var(--ink2);padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.cb-track{width:3px;height:44px;background:rgba(255,255,255,.05);position:relative;overflow:hidden}
+.cb-fill{position:absolute;bottom:0;left:0;right:0;transition:height .9s ease;height:0}
+.cb-val{font-family:'Cormorant Garamond',serif;font-size:1rem;font-style:italic;line-height:1}
+.cb-lbl{font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.25);text-align:center;line-height:1.3}
+.ai-sum{background:rgba(184,146,62,.07);border:1px solid rgba(184,146,62,.18);padding:15px 18px;margin:0 64px;display:none;gap:12px;align-items:flex-start}
+.ai-sum.show{display:flex}
+.ai-sum-icon{font-size:.95rem;flex-shrink:0;margin-top:1px}
+.ai-sum-title{font-size:.78rem;font-weight:500;color:var(--ink);margin-bottom:3px}
+.ai-sum-text{font-size:.77rem;color:var(--stone);line-height:1.65}
+.ai-sum-opp{margin-top:7px;padding-top:7px;border-top:1px solid var(--soft);font-size:.74rem;color:var(--ink);display:none}
+.ai-sum-opp strong{color:var(--gold)}
+
+/* INTRO */
+.intro{padding:36px 64px;background:var(--cream);border-bottom:1px solid var(--border)}
+.intro-grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:44px}
+.intro-text p{font-size:.84rem;line-height:1.78;color:var(--stone);margin-bottom:12px}
+.intro-text p:last-child{margin-bottom:0}
+.intro-text strong{color:var(--ink);font-weight:500}
+.steps{display:flex;flex-direction:column;gap:10px}
+.step{display:flex;gap:12px;align-items:flex-start}
+.step-n{width:20px;height:20px;background:var(--gold);color:white;font-size:.58rem;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step-body strong{display:block;font-size:.8rem;font-weight:500;color:var(--ink);margin-bottom:1px}
+.step-body span{font-size:.74rem;color:var(--stone)}
+
+/* BRAND BOX */
+.brand-wrap{padding:0 64px;margin-top:32px}
+.brand-box{background:var(--ink);padding:28px 32px;position:relative}
+.brand-title-row{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.brand-title-row::before{content:'';display:inline-block;width:16px;height:1px;background:var(--gold);margin-right:8px;vertical-align:middle}
+.brand-ai-tag{font-size:.54rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);opacity:0;transition:opacity .3s}
+.brand-ai-tag.show{opacity:.65}
+.brand-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bf{display:flex;flex-direction:column;gap:4px}
+.bf.full{grid-column:1/-1}
+.bf label{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.26)}
+.bf input,.bf textarea{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);padding:8px 11px;font-family:'DM Sans',sans-serif;font-size:.8rem;color:white;font-weight:300;resize:none;outline:none;transition:all .2s;width:100%;border-radius:0}
+.bf input:focus,.bf textarea:focus{border-color:var(--gold)}
+.bf input::placeholder,.bf textarea::placeholder{color:rgba(255,255,255,.17)}
+.bf input.ai,.bf textarea.ai{border-color:rgba(184,146,62,.38);background:rgba(184,146,62,.07)}
+
+/* SECTION HEADERS */
+.sec-header{padding:32px 64px 0}
+.sec-kicker{font-size:.56rem;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;gap:9px}
+.sec-kicker::before{content:'';width:16px;height:1px;background:var(--gold)}
+.sec-title{font-family:'Cormorant Garamond',serif;font-size:1.75rem;font-weight:300;color:var(--ink);margin-bottom:7px}
+.sec-title em{font-style:italic;color:var(--gold)}
+.sec-desc{font-size:.78rem;line-height:1.66;color:var(--stone);max-width:600px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+
+/* CATEGORIES */
+.cat{margin:0 64px;padding:22px 0;border-bottom:1px solid var(--soft)}
+.cat:last-of-type{border-bottom:none}
+.cat-head{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.cat-icon{width:28px;height:28px;background:var(--gold-l);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0}
+.cat-name{font-size:.78rem;font-weight:500;color:var(--ink)}
+.cat-goal{font-size:.7rem;color:var(--stone);margin-top:1px}
+.cat-score-badge{margin-left:auto;font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-style:italic;opacity:0;transition:opacity .4s}
+.cat-score-badge.show{opacity:1}
+
+/* ITEMS */
+.items{display:flex;flex-direction:column}
+.item{display:grid;grid-template-columns:15px 1fr auto;gap:11px;align-items:start;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.036);transition:opacity .12s}
+.item:last-child{border-bottom:none}
+.item.scanning{opacity:.42}
+.cb{width:13px;height:13px;border:1px solid rgba(184,146,62,.36);margin-top:3px;flex-shrink:0;background:white;cursor:pointer;position:relative;transition:all .15s;user-select:none}
+.cb.on{background:var(--gold);border-color:var(--gold)}
+.cb.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:7.5px;color:white;font-weight:700;line-height:1}
+.cb.ai-on{background:#7A6228;border-color:#7A6228}
+.cb.ai-on::after{content:'AI';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:5px;color:white;font-weight:700;line-height:1}
+.item-lbl{font-size:.8rem;color:var(--ink);line-height:1.4}
+.item-lbl.done{text-decoration:line-through;color:var(--stone);text-decoration-color:rgba(184,146,62,.4)}
+.item-sub{font-size:.71rem;color:var(--stone);line-height:1.55;margin-top:2px}
+.item-note{font-size:.68rem;color:rgba(184,146,62,.8);margin-top:3px;font-style:italic;display:none}
+.item-note.show{display:block}
+.tag{font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;align-self:start;margin-top:3px;white-space:nowrap;border:1px solid}
+.tag.c{color:#b03a2e;border-color:rgba(176,58,46,.3);background:rgba(176,58,46,.04)}
+.tag.h{color:#ca6f1e;border-color:rgba(202,111,30,.3);background:rgba(202,111,30,.04)}
+.tag.m{color:var(--gold);border-color:var(--border);background:var(--gold-l)}
+
+/* SCORE */
+.score-wrap{background:var(--cream);padding:32px 64px;border-top:1px solid var(--border)}
+.score-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px}
+.score-label{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:300;color:var(--ink)}
+.score-big{font-family:'Cormorant Garamond',serif;font-size:2.5rem;color:var(--gold);font-style:italic;line-height:1}
+.bar-row{display:grid;grid-template-columns:158px 1fr 42px;gap:12px;align-items:center;margin-bottom:9px}
+.bar-row:last-child{margin-bottom:0}
+.bar-lbl{font-size:.73rem;color:var(--stone)}
+.bar-track{height:3px;background:rgba(0,0,0,.07);border-radius:2px}
+.bar-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .5s ease;width:0}
+.bar-pct{font-size:.71rem;color:var(--gold);text-align:right}
+
+/* PRIORITIES */
+.pri-wrap{padding:24px 64px 32px}
+.pri-title{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:300;color:var(--ink);margin-bottom:14px}
+.pri-list{display:flex;flex-direction:column;gap:7px}
+.pri-item{display:flex;gap:12px;align-items:flex-start;padding:10px 14px;border-left:3px solid var(--border)}
+.pri-item.lc{border-color:#b03a2e;background:rgba(176,58,46,.03)}
+.pri-item.lh{border-color:#ca6f1e;background:rgba(202,111,30,.03)}
+.pri-item.lm{border-color:var(--gold);background:var(--gold-l)}
+.pri-n{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--stone);font-style:italic;flex-shrink:0;width:17px;margin-top:1px}
+.pri-body strong{display:block;font-size:.8rem;font-weight:500;color:var(--ink);margin-bottom:2px}
+.pri-body em{font-size:.73rem;color:var(--stone);font-style:normal}
+.pri-empty{font-size:.78rem;color:var(--stone);padding:6px 0}
+
+/* HERO CTA */
+.hero-cta{background:var(--ink);padding:32px 64px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.hc-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:white;font-weight:300;margin-bottom:4px}
+.hc-title em{font-style:italic;color:var(--gold)}
+.hc-sub{font-size:.75rem;color:var(--stone)}
+.btn-gen{background:var(--gold);color:#fff;border:none;padding:13px 30px;font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:background .2s;white-space:nowrap}
+.btn-gen:hover{background:#c9a450}
+.btn-gen:disabled{opacity:.38;cursor:not-allowed}
+
+/* HERO OUTPUT */
+.hero-output{border-top:1px solid var(--border)}
+.hero-output.hidden{display:none}
+.ho-hdr{background:var(--ink);padding:24px 64px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:1px solid rgba(184,146,62,.12)}
+.ho-kicker{font-size:.56rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.ho-kicker::before{content:'';width:14px;height:1px;background:var(--gold)}
+.ho-title{font-family:'Cormorant Garamond',serif;font-size:1.35rem;color:white;font-weight:300}
+.ho-acts{display:flex;gap:8px}
+.hbtn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);padding:8px 13px;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;white-space:nowrap}
+.hbtn:hover{border-color:var(--gold);color:var(--gold)}
+.hbtn.gold{background:var(--gold);border-color:var(--gold);color:#fff}
+.hbtn.gold:hover{background:#c9a450}
+.ho-tabs{display:flex;border-bottom:1px solid rgba(184,146,62,.1);padding:0 64px;background:#0f0e0c}
+.ho-tab{padding:12px 16px;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.28);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;background:none;border-left:none;border-right:none;border-top:none;font-family:'DM Sans',sans-serif}
+.ho-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.ho-panel{display:none;padding:28px 64px;background:#111}
+.ho-panel.active{display:block}
+.prev-wrap{background:white;position:relative;margin-bottom:14px;border:1px solid rgba(255,255,255,.07)}
+.prev-badge{position:absolute;top:0;left:0;background:var(--gold);color:#fff;font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;padding:4px 11px;z-index:1}
+.prev-iframe{width:100%;height:420px;border:none;display:block}
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.cmp-lbl{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;padding:7px 10px;text-align:center;margin-bottom:7px}
+.cmp-lbl.bef{background:rgba(255,255,255,.04);color:rgba(255,255,255,.28)}
+.cmp-lbl.aft{background:var(--gold);color:#fff}
+.cmp-frame{background:white;overflow:hidden;border:1px solid rgba(255,255,255,.07)}
+.cmp-iframe{width:100%;height:300px;border:none;display:block;pointer-events:none}
+.chg-list{display:flex;flex-direction:column;gap:6px}
+.chg-row{display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);align-items:flex-start}
+.chg-arr{color:var(--gold);font-size:.85rem;flex-shrink:0;margin-top:2px}
+.chg-text strong{display:block;font-size:.8rem;color:white;margin-bottom:2px}
+.chg-text span{font-size:.74rem;color:rgba(255,255,255,.42)}
+.code-lbl{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--stone);margin-bottom:7px}
+.code-wrap{position:relative}
+.code-ta{width:100%;height:200px;background:#0a0908;border:1px solid rgba(255,255,255,.07);color:rgba(255,255,255,.46);font-family:'Courier New',monospace;font-size:.73rem;line-height:1.55;padding:12px;resize:vertical;outline:none}
+.code-cp{position:absolute;top:0;right:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.38);padding:5px 11px;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.code-cp:hover{border-color:var(--gold);color:var(--gold)}
+.code-cp.copied{border-color:#1e8449;color:#1e8449}
+
+/* OVERLAY */
+.gen-overlay{display:none;position:fixed;inset:0;background:rgba(10,9,8,.94);z-index:300;flex-direction:column;align-items:center;justify-content:center;gap:20px;backdrop-filter:blur(10px)}
+.gen-overlay.active{display:flex}
+.spinner{width:40px;height:40px;border:1px solid rgba(184,146,62,.18);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gen-ttl{font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:rgba(255,255,255,.6);font-weight:300}
+.gen-ttl em{font-style:italic;color:var(--gold)}
+.gen-steps{display:flex;flex-direction:column;gap:7px;align-items:center}
+.gen-s{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.2);transition:color .3s}
+.gen-s.active{color:var(--gold)}
+.gen-s.done{color:rgba(39,174,96,.55)}
+
+/* COLD MAIL SUMMARY */
+.coldmail-section{background:var(--cream);border-top:1px solid var(--border);padding:36px 64px;display:none}
+.coldmail-section.show{display:block}
+.cm-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.cm-kicker{font-size:.56rem;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;gap:9px}
+.cm-kicker::before{content:'';width:16px;height:1px;background:var(--gold)}
+.cm-title{font-family:'Cormorant Garamond',serif;font-size:1.75rem;font-weight:300;color:var(--ink)}
+.cm-title em{font-style:italic;color:var(--gold)}
+.cm-actions{display:flex;gap:8px}
+.cm-btn{font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;padding:8px 16px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;white-space:nowrap}
+.cm-btn-ghost{background:transparent;border:1px solid var(--soft);color:var(--stone)}
+.cm-btn-ghost:hover{border-color:var(--ink);color:var(--ink)}
+.cm-btn-dark{background:var(--ink);color:var(--warm)}
+.cm-btn-dark:hover{background:var(--gold)}
+/* Email preview card */
+.email-card{background:#fff;border:1px solid var(--soft);max-width:680px}
+.email-card-header{background:var(--ink2);padding:14px 20px;display:flex;align-items:center;gap:12px}
+.email-dots{display:flex;gap:6px}
+.email-dot{width:10px;height:10px;border-radius:50%}
+.email-field{padding:0 20px}
+.email-field-row{display:flex;gap:8px;padding:9px 0;border-bottom:1px solid var(--soft);font-size:.77rem;color:var(--stone);align-items:flex-start}
+.email-field-row:last-of-type{border-bottom:none}
+.email-field-lbl{font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--stone2);width:60px;flex-shrink:0;padding-top:1px}
+.email-field-val{color:var(--ink);flex:1}
+.email-field-val.subject{font-weight:500;color:var(--ink)}
+.email-body-wrap{padding:20px;border-top:1px solid var(--soft)}
+.email-body{font-size:.82rem;line-height:1.75;color:var(--ink);white-space:pre-wrap}
+.email-body .highlight{color:var(--gold);font-weight:500}
+/* Score card inside email */
+.email-score-preview{background:var(--cream);border:1px solid var(--border);padding:16px 18px;margin:14px 0;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.esp-num{font-family:'Cormorant Garamond',serif;font-size:2.4rem;color:var(--gold);font-style:italic;line-height:1;flex-shrink:0}
+.esp-bars{display:flex;flex-direction:column;gap:5px}
+.esp-bar-row{display:grid;grid-template-columns:80px 1fr 32px;gap:8px;align-items:center}
+.esp-bar-lbl{font-size:.62rem;color:var(--stone)}
+.esp-bar-track{height:2px;background:rgba(0,0,0,.07)}
+.esp-bar-fill{height:100%;background:var(--gold);transition:width .5s ease;width:0}
+.esp-bar-val{font-size:.62rem;color:var(--gold);text-align:right}
+/* Improvements checklist in email */
+.email-improvements{margin:12px 0;display:flex;flex-direction:column;gap:5px}
+.email-imp-row{display:flex;gap:9px;font-size:.79rem;color:var(--stone2);align-items:flex-start}
+.email-imp-row::before{content:'→';color:var(--gold);flex-shrink:0;font-size:.75rem;margin-top:2px}
+.email-imp-row strong{color:var(--ink);font-weight:500}
+/* Editable email subject/body */
+.email-editable{background:#fff;border:1px solid var(--soft);padding:0;font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--ink);line-height:1.75;resize:vertical;width:100%;outline:none;transition:border-color .2s;min-height:80px}
+.email-editable:focus{border-color:var(--gold)}
+
+/* FOOTER */
+footer{background:var(--ink);padding:18px 64px;display:flex;justify-content:space-between;align-items:center}
+.foot-logo{font-family:'Cormorant Garamond',serif;font-size:.86rem;color:rgba(255,255,255,.26)}
+.foot-logo span{color:var(--gold);font-style:italic}
+.foot-txt{font-size:.61rem;color:rgba(255,255,255,.13);letter-spacing:.05em}
+
+@media(max-width:700px){
+  .cover,.scan-bar,.toolbar,.intro,.brand-wrap,.sec-header,.cat,.score-wrap,.pri-wrap,.hero-cta,.ho-hdr,.ho-tabs,.ho-panel,.ai-sum{padding-left:20px;padding-right:20px}
+  .intro-grid,.brand-grid{grid-template-columns:1fr}
+  .bar-row{grid-template-columns:100px 1fr 34px}
+  .cmp-grid{grid-template-columns:1fr}
+  .cat-bars-row{grid-template-columns:repeat(4,1fr)}
+  footer{flex-direction:column;gap:8px;padding:14px 20px;text-align:center}
+  .hero-cta,.score-summary{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<div class="cover no-print">
+  <div class="kicker">Gentle Redesign · Berlin</div>
+  <h1>Website Audit<br><em>Checkliste.</em></h1>
+  <p class="cover-sub">URL eingeben — KI analysiert automatisch alle 42 Checkpunkte, generiert den Score und erstellt eine neue Hero-Sektion.</p>
+  <div class="cover-meta">
+    <div class="stat"><div class="stat-num">7</div><div class="stat-lbl">Kategorien</div></div>
+    <div class="stat"><div class="stat-num">42</div><div class="stat-lbl">Checkpunkte</div></div>
+    <div class="stat"><div class="stat-num" style="font-size:1.3rem;letter-spacing:-.02em">KI</div><div class="stat-lbl">Auto-Audit</div></div>
+    <div class="stat"><div class="stat-num" style="font-size:1.3rem">Hero</div><div class="stat-lbl">Generator</div></div>
+  </div>
+</div>
+
+<div class="scan-bar no-print">
+  <div class="scan-bar-label">Automatischer KI-Audit</div>
+  <div class="scan-row">
+    <input type="url" class="scan-input" id="scanUrl" placeholder="https://beispiel.de — URL eingeben und Enter drücken" />
+    <button class="scan-btn" id="scanBtn" onclick="runAudit()">Analysieren →</button>
+  </div>
+  <div class="scan-status" id="ss"><div class="sdot" id="sdot"></div><div class="stxt" id="stxt"></div></div>
+  <div class="scan-prog" id="sp">
+    <div class="sp" id="sp1">Website lesen</div>
+    <div class="sp" id="sp2">Brand erkennen</div>
+    <div class="sp" id="sp3">42 Checks</div>
+    <div class="sp" id="sp4">Score kalkulieren</div>
+    <div class="sp" id="sp5">Fertig</div>
+  </div>
+</div>
+
+<!-- Inline Report (erscheint nach Audit) -->
+<div class="report-panel" id="reportPanel">
+  <div class="score-summary" id="scoreSummary">
+    <div>
+      <div class="sos-num" id="sosNum" style="color:var(--gold)">—</div>
+      <div class="sos-grade" id="sosGrade" style="color:var(--gold);border-color:rgba(184,146,62,.3)">—</div>
+    </div>
+    <div class="cat-bars-row" id="catBarsRow"></div>
+  </div>
+  <div class="ai-sum" id="aiSum">
+    <div class="ai-sum-icon">✦</div>
+    <div>
+      <div class="ai-sum-title" id="aiSumTitle"></div>
+      <div class="ai-sum-text" id="aiSumText"></div>
+      <div class="ai-sum-opp" id="aiSumOpp"><strong>Größte Chance:</strong> <span id="aiSumOppText"></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="toolbar no-print">
+  <div class="tb-info">Gefunden: <strong id="progTxt">0 / 42</strong></div>
+  <div class="tb-url" id="tbUrl"></div>
+  <div style="display:flex;gap:7px">
+    <button class="tbtn tbtn-g" onclick="resetAll()">Zurücksetzen</button>
+    <button class="tbtn tbtn-d" onclick="window.print()">Als PDF</button>
+  </div>
+</div>
+
+<div class="intro" style="margin-top:28px">
+  <div class="intro-grid">
+    <div class="intro-text">
+      <p><strong>Ziel:</strong> Websites identifizieren die von einem Redesign profitieren — und das Potenzial mit einer personalisierten Hero-Sektion sofort sichtbar machen.</p>
+      <p>URL eingeben → KI analysiert und füllt alle 42 Checkpunkte sowie das Brand-Profil automatisch aus. Am Ende wird eine neue Hero-Sektion generiert — fertig für das Cold Mail.</p>
+      <p style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+        <strong>Prioritäten:</strong> <span style="color:#b03a2e">Kritisch</span> = Abmahnrisiko ·
+        <span style="color:#ca6f1e">Hoch</span> = Conversion-Verlust ·
+        <span style="color:var(--gold)">Mittel</span> = Qualitätssteigerung
+      </p>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-n">1</div><div class="step-body"><strong>URL eingeben</strong><span>KI analysiert und füllt alles automatisch aus</span></div></div>
+      <div class="step"><div class="step-n">2</div><div class="step-body"><strong>Checkliste prüfen</strong><span>KI-Findings manuell verfeinern</span></div></div>
+      <div class="step"><div class="step-n">3</div><div class="step-body"><strong>Score auswerten</strong><span>Top-Prioritäten für das Angebot</span></div></div>
+      <div class="step"><div class="step-n">4</div><div class="step-body"><strong>Hero generieren</strong><span>Neue Sektion basierend auf Audit</span></div></div>
+      <div class="step"><div class="step-n">5</div><div class="step-body"><strong>Cold Mail versenden</strong><span>Mit Vorher/Nachher als Beweis</span></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="sec-header" style="margin-top:32px">
+  <div class="sec-kicker">Schritt 1</div>
+  <div class="sec-title">Brand <em>definieren</em></div>
+  <p class="sec-desc">Wird automatisch vom KI-Audit ausgefüllt — manuell anpassbar. Fließt direkt in die Hero-Sektion.</p>
+</div>
+<div class="brand-wrap" style="margin-bottom:0">
+  <div class="brand-box">
+    <div class="brand-title-row">Brand · Produkt · Zielgruppe<span class="brand-ai-tag" id="brandTag">✦ KI ausgefüllt</span></div>
+    <div class="brand-grid">
+      <div class="bf"><label>Unternehmensname</label><input type="text" id="bName" placeholder="z.B. Studio Mayer GmbH"></div>
+      <div class="bf"><label>Branche</label><input type="text" id="bCat" placeholder="z.B. Architektur, E-Commerce"></div>
+      <div class="bf"><label>Kernprodukt / Dienstleistung</label><input type="text" id="bProduct" placeholder="z.B. Innenarchitektur für Privatkunden"></div>
+      <div class="bf"><label>Zielgruppe</label><input type="text" id="bAudience" placeholder="z.B. Privatkunden 35–55, kaufkräftig"></div>
+      <div class="bf full"><label>Alleinstellungsmerkmal (USP)</label><textarea id="bUSP" rows="2" placeholder="Was macht diese Marke einzigartig?"></textarea></div>
+      <div class="bf"><label>Aktuelle Tonalität</label><input type="text" id="bTone" placeholder="z.B. formal, generisch"></div>
+      <div class="bf"><label>Empfohlene Tonalität</label><input type="text" id="bToneRec" placeholder="z.B. modern-warm, professionell-persönlich"></div>
+    </div>
+  </div>
+</div>
+
+<div class="sec-header" style="margin-top:36px">
+  <div class="sec-kicker">Kategorie 1 / 7</div>
+  <div class="sec-title">Design & <em>Modernität</em></div>
+  <p class="sec-desc">Erster Eindruck entscheidet in 3 Sekunden. Veraltetes Design signalisiert sofort: nicht vertrauenswürdig.</p>
+</div>
+<div class="cat" data-cat="design">
+  <div class="cat-head"><div class="cat-icon">◈</div><div><div class="cat-name">Visuelles Design</div><div class="cat-goal">Ziel: Moderner Auftritt der sofort Vertrauen aufbaut</div></div><div class="cat-score-badge" id="csb-design"></div></div>
+  <div class="items">
+    <div class="item" data-key="design_1"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Veraltetes visuelles Design (vor 2020)</div><div class="item-sub">Flat Design 1.0, überfüllte Layouts, veraltete Farbschemen oder Gradienten</div><div class="item-note"></div></div><div class="tag c">Kritisch</div></div>
+    <div class="item" data-key="design_2"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Schlechte visuelle Hierarchie</div><div class="item-sub">Alle Elemente gleich gewichtet — kein Fokuspunkt, kein Blick-Leading</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="design_3"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Inkonsistentes Layout / fehlendes Rastersystem</div><div class="item-sub">Elemente nicht ausgerichtet, unterschiedliche Abstände, willkürliche Positionierung</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="design_4"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Schlechte oder generische Bildsprache</div><div class="item-sub">Stockfotos mit lächelnden Anzugträgern, gemischte Bildstile, pixelige Bilder</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="design_5"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Zu wenig Weißraum / überfüllte Seite</div><div class="item-sub">Jeder Pixel befüllt — keine visuelle Luft, kein Fokus möglich</div><div class="item-note"></div></div><div class="tag m">Mittel</div></div>
+    <div class="item" data-key="design_6"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Copyright-Jahr veraltet im Footer</div><div class="item-sub">© 2018 oder älter — signalisiert: diese Website wird nicht gepflegt</div><div class="item-note"></div></div><div class="tag m">Mittel</div></div>
+  </div>
+</div>
+
+<div class="sec-header" style="margin-top:14px">
+  <div class="sec-kicker">Kategorie 2 / 7</div>
+  <div class="sec-title">Brand <em>Identity</em></div>
+  <p class="sec-desc">Die Marke muss erkennbar, kohärent und auf die Zielgruppe abgestimmt sein.</p>
+</div>
+<div class="cat" data-cat="brand">
+  <div class="cat-head"><div class="cat-icon">◉</div><div><div class="cat-name">Markenidentität</div><div class="cat-goal">Ziel: Kohärente, professionelle Brand die zur Zielgruppe passt</div></div><div class="cat-score-badge" id="csb-brand"></div></div>
+  <div class="items">
+    <div class="item" data-key="brand_1"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Logo veraltet, pixelig oder inkonsistent</div><div class="item-sub">Kein Vektorformat, verschiedene Versionen auf derselben Seite</div><div class="item-note"></div></div><div class="tag c">Kritisch</div></div>
+    <div class="item" data-key="brand_2"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Farbpalette inkonsistent oder unpassend</div><div class="item-sub">Zu viele Farben, keine Dominanzfarbe, Farben passen nicht zur Zielgruppe</div><div class="item-note"></div></div><div class="tag c">Kritisch</div></div>
+    <div class="item" data-key="brand_3"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Typografie generisch oder inkonsistent</div><div class="item-sub">Arial/Times, mehr als 3 Schriftfamilien, keine typografische Hierarchie</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="brand_4"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Brand passt nicht zum Produkt oder Preissegment</div><div class="item-sub">Premium-Produkt mit Budget-Design — Disconnect zwischen Erwartung und Realität</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="brand_5"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Kein wiedererkennbares Brand-Muster</div><div class="item-sub">Keine konsistenten Designelemente über Seiten hinweg</div><div class="item-note"></div></div><div class="tag m">Mittel</div></div>
+  </div>
+</div>
+
+<div class="sec-header" style="margin-top:14px">
+  <div class="sec-kicker">Kategorie 3 / 7</div>
+  <div class="sec-title">Hero & <em>Struktur</em></div>
+  <p class="sec-desc">Die Hero-Sektion entscheidet ob der Besucher bleibt oder sofort abspringt.</p>
+</div>
+<div class="cat" data-cat="hero">
+  <div class="cat-head"><div class="cat-icon">◇</div><div><div class="cat-name">Hero-Sektion & Seitenstruktur</div><div class="cat-goal">Ziel: Klares Wertversprechen, Orientierung, führender CTA</div></div><div class="cat-score-badge" id="csb-hero"></div></div>
+  <div class="items">
+    <div class="item" data-key="hero_1"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Headline fehlt oder ist wertlos</div><div class="item-sub">„Willkommen" oder nur Unternehmensname — kein Wertversprechen</div><div class="item-note"></div></div><div class="tag c">Kritisch</div></div>
+    <div class="item" data-key="hero_2"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Kein CTA above the fold</div><div class="item-sub">Kein sichtbarer Button ohne Scrollen</div><div class="item-note"></div></div><div class="tag c">Kritisch</div></div>
+    <div class="item" data-key="hero_3"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Wer/Was/Warum nicht erkennbar</div><div class="item-sub">5-Sekunden-Test gescheitert — Besucher versteht Angebot nicht</div><div class="item-note"></div></div><div class="tag c">Kritisch</div></div>
+    <div class="item" data-key="hero_4"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">CTA zu generisch</div><div class="item-sub">„Mehr erfahren" statt konkreter Handlung</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="hero_5"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Navigation überladen</div><div class="item-sub">Mehr als 6 Hauptmenüpunkte, kein Fokus</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="hero_6"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Kein Social Proof</div><div class="item-sub">Kein Trust-Element above fold</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="hero_7"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Schlechte Lesbarkeit im Hero</div><div class="item-sub">Text zu klein, Zeilen zu lang, unzureichender Kontrast</div><div class="item-note"></div></div><div class="tag m">Mittel</div></div>
+  </div>
+</div>
+
+<div class="sec-header" style="margin-top:14px">
+  <div class="sec-kicker">Kategorie 4 / 7</div>
+  <div class="sec-title">Mobile <em>Optimierung</em></div>
+  <p class="sec-desc">62% aller Besuche kommen vom Smartphone — nicht-optimierte Seiten verlieren diesen Traffic sofort.</p>
+</div>
+<div class="cat" data-cat="mobile">
+  <div class="cat-head"><div class="cat-icon">▣</div><div><div class="cat-name">Responsive Design</div><div class="cat-goal">Ziel: Perfekte Darstellung auf allen Geräten</div></div><div class="cat-score-badge" id="csb-mobile"></div></div>
+  <div class="items">
+    <div class="item" data-key="mobile_1"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Nicht mobil-optimiert</div><div class="item-sub">Horizontales Scrollen, Desktop-Layout auf Mobile gezwängt</div><div class="item-note"></div></div><div class="tag c">Kritisch</div></div>
+    <div class="item" data-key="mobile_2"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Touch-Targets zu klein (&lt;44px)</div><div class="item-sub">Buttons für Fingernavigation nicht bedienbar</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="mobile_3"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Mobiles Menü fehlt oder defekt</div><div class="item-sub">Kein Hamburger-Menü oder es blockiert Inhalte</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="mobile_4"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Inhalte auf Mobile abgeschnitten</div><div class="item-sub">Elemente ragen über Rand hinaus oder überlagern sich</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="mobile_5"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Schrift auf Mobile zu klein</div><div class="item-sub">Body-Text unter 14px — Nutzer muss zoomen</div><div class="item-note"></div></div><div class="tag m">Mittel</div></div>
+  </div>
+</div>
+
+<div class="sec-header" style="margin-top:14px">
+  <div class="sec-kicker">Kategorie 5 / 7</div>
+  <div class="sec-title">Trust & <em>Conversion</em></div>
+  <p class="sec-desc">Vertrauen ist die Voraussetzung für Conversion. Ohne Trust-Elemente kauft niemand.</p>
+</div>
+<div class="cat" data-cat="trust">
+  <div class="cat-head"><div class="cat-icon">◎</div><div><div class="cat-name">Vertrauen & Handlungsaufforderung</div><div class="cat-goal">Ziel: Besucher vertraut und weiß was er tun soll</div></div><div class="cat-score-badge" id="csb-trust"></div></div>
+  <div class="items">
+    <div class="item" data-key="trust_1"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Keine Kundenstimmen oder Bewertungen</div><div class="item-sub">Kein Social Proof — Seriosität nicht einschätzbar</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="trust_2"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Keine konkreten Zahlen oder Beweise</div><div class="item-sub">Keine Kennzahlen — alles bleibt vage und unbeweisbar</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="trust_3"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Kontaktmöglichkeiten schwer auffindbar</div><div class="item-sub">Nur im Impressum versteckt — kein sichtbarer Kontaktweg</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="trust_4"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Kein „Über uns" oder Team-Bereich</div><div class="item-sub">Anonyme Darstellung — kein Gesicht, keine Geschichte</div><div class="item-note"></div></div><div class="tag m">Mittel</div></div>
+    <div class="item" data-key="trust_5"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Formulare ohne Vertrauen</div><div class="item-sub">Kein Hinweis auf Reaktionszeit oder nächste Schritte</div><div class="item-note"></div></div><div class="tag m">Mittel</div></div>
+  </div>
+</div>
+
+<div class="sec-header" style="margin-top:14px">
+  <div class="sec-kicker">Kategorie 6 / 7</div>
+  <div class="sec-title">SEO & <em>Technik</em></div>
+  <p class="sec-desc">Ohne technische Grundlage ist die beste Website bei Google unsichtbar.</p>
+</div>
+<div class="cat" data-cat="seo">
+  <div class="cat-head"><div class="cat-icon">◎</div><div><div class="cat-name">SEO-Grundlage & Technik</div><div class="cat-goal">Ziel: Google findet, versteht und rankt die Seite</div></div><div class="cat-score-badge" id="csb-seo"></div></div>
+  <div class="items">
+    <div class="item" data-key="seo_1"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Ladezeit über 3 Sekunden</div><div class="item-sub">Core Web Vitals: Abstrafung im Ranking + hohe Absprungrate</div><div class="item-note"></div></div><div class="tag c">Kritisch</div></div>
+    <div class="item" data-key="seo_2"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Meta-Titel und -Beschreibung fehlen</div><div class="item-sub">Nur Firmenname oder Platzhalter — Keyword-Potenzial verschenkt</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="seo_3"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">H1-Struktur falsch oder fehlend</div><div class="item-sub">Keine oder mehrere H1 — Hierarchie für Google unklar</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="seo_4"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Bilder ohne Alt-Texte</div><div class="item-sub">SEO- und Barrierefreiheits-Signal fehlt</div><div class="item-note"></div></div><div class="tag m">Mittel</div></div>
+    <div class="item" data-key="seo_5"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Kein Tracking oder Analytics</div><div class="item-sub">Keine Daten über Besucher, Quellen, Absprungrate</div><div class="item-note"></div></div><div class="tag m">Mittel</div></div>
+  </div>
+</div>
+
+<div class="sec-header" style="margin-top:14px">
+  <div class="sec-kicker">Kategorie 7 / 7</div>
+  <div class="sec-title">Rechtliches & <em>DSGVO</em></div>
+  <p class="sec-desc">In Deutschland besonders kritisch: fehlende Rechtsgrundlagen bedeuten Abmahnrisiko.</p>
+</div>
+<div class="cat" data-cat="legal" style="margin-bottom:0">
+  <div class="cat-head"><div class="cat-icon">⚖</div><div><div class="cat-name">Rechtliche Compliance</div><div class="cat-goal">Ziel: Rechtssicher, DSGVO-konform, vertrauenswürdig</div></div><div class="cat-score-badge" id="csb-legal"></div></div>
+  <div class="items">
+    <div class="item" data-key="legal_1"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Kein Impressum oder nicht auffindbar</div><div class="item-sub">In Deutschland Pflicht — Abmahnrisiko und Vertrauensverlust</div><div class="item-note"></div></div><div class="tag c">Kritisch</div></div>
+    <div class="item" data-key="legal_2"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Kein Cookie-Banner</div><div class="item-sub">DSGVO-Verstoß bei Tracking ohne Einwilligung</div><div class="item-note"></div></div><div class="tag c">Kritisch</div></div>
+    <div class="item" data-key="legal_3"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Datenschutzerklärung fehlt oder veraltet</div><div class="item-sub">Muss alle verwendeten Tools abdecken</div><div class="item-note"></div></div><div class="tag h">Hoch</div></div>
+    <div class="item" data-key="legal_4"><div class="cb" onclick="toggle(this)"></div><div class="item-body"><div class="item-lbl">Kontaktformular ohne Datenschutzhinweis</div><div class="item-sub">Pflichthinweis auf Datenschutzverarbeitung fehlt</div><div class="item-note"></div></div><div class="tag m">Mittel</div></div>
+  </div>
+</div>
+
+<div class="score-wrap" style="margin-top:20px">
+  <div class="score-top">
+    <div class="score-label">Audit Score — Kundenperspektive</div>
+    <div class="score-big" id="scoreDisplay">100 / 100</div>
+  </div>
+  <div>
+    <div class="bar-row"><div class="bar-lbl">Design</div><div class="bar-track"><div class="bar-fill" id="b-design"></div></div><div class="bar-pct" id="p-design">100%</div></div>
+    <div class="bar-row"><div class="bar-lbl">Brand Identity</div><div class="bar-track"><div class="bar-fill" id="b-brand"></div></div><div class="bar-pct" id="p-brand">100%</div></div>
+    <div class="bar-row"><div class="bar-lbl">Hero &amp; Struktur</div><div class="bar-track"><div class="bar-fill" id="b-hero"></div></div><div class="bar-pct" id="p-hero">100%</div></div>
+    <div class="bar-row"><div class="bar-lbl">Mobile</div><div class="bar-track"><div class="bar-fill" id="b-mobile"></div></div><div class="bar-pct" id="p-mobile">100%</div></div>
+    <div class="bar-row"><div class="bar-lbl">Trust &amp; Conversion</div><div class="bar-track"><div class="bar-fill" id="b-trust"></div></div><div class="bar-pct" id="p-trust">100%</div></div>
+    <div class="bar-row"><div class="bar-lbl">SEO &amp; Technik</div><div class="bar-track"><div class="bar-fill" id="b-seo"></div></div><div class="bar-pct" id="p-seo">100%</div></div>
+    <div class="bar-row"><div class="bar-lbl">Rechtliches</div><div class="bar-track"><div class="bar-fill" id="b-legal"></div></div><div class="bar-pct" id="p-legal">100%</div></div>
+  </div>
+</div>
+
+<div class="pri-wrap">
+  <div class="pri-title">Top-Prioritäten für das Cold Mail</div>
+  <div class="pri-list" id="priList"><div class="pri-empty">URL eingeben für automatischen Audit — oder Probleme manuell abhaken.</div></div>
+
+  <!-- Cold Mail Zusammenfassung — erscheint nach Audit automatisch -->
+  <div id="coldMailInline" style="display:none;margin-top:28px">
+    <div style="height:1px;background:var(--border);margin-bottom:24px"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:5px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:14px;height:1px;background:var(--gold)"></span>Cold Mail Entwurf</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:300;color:var(--ink)">Personalisiert. <em style="font-style:italic;color:var(--gold)">Versandfertig.</em></div>
+      </div>
+      <button onclick="copyColdMail()" id="cmCopyBtn" style="font-size:.63rem;letter-spacing:.14em;text-transform:uppercase;padding:9px 18px;background:var(--ink);color:var(--warm);border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s" onmouseover="this.style.background='#B8923E'" onmouseout="this.style.background='#141210'">Mail kopieren</button>
+    </div>
+
+    <!-- Email card -->
+    <div style="background:#fff;border:1px solid var(--soft)">
+      <!-- Fake browser bar -->
+      <div style="background:#1E1C19;padding:10px 16px;display:flex;align-items:center;gap:10px">
+        <div style="display:flex;gap:5px"><div style="width:9px;height:9px;border-radius:50%;background:#ff5f57"></div><div style="width:9px;height:9px;border-radius:50%;background:#ffbd2e"></div><div style="width:9px;height:9px;border-radius:50%;background:#28c840"></div></div>
+        <div style="font-size:.65rem;color:rgba(255,255,255,.3);letter-spacing:.06em">Neue Nachricht</div>
+      </div>
+      <!-- Fields -->
+      <div style="border-bottom:1px solid var(--soft)">
+        <div style="display:flex;gap:8px;padding:9px 18px;border-bottom:1px solid var(--soft);font-size:.77rem">
+          <span style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--stone2);width:58px;flex-shrink:0;padding-top:1px">An</span>
+          <span style="color:var(--stone)" id="cm-to"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0f6661676e6d6a7d4f66677d6a226b60626e6661216b6a">[email&#160;protected]</a></span>
+        </div>
+        <div style="display:flex;gap:8px;padding:9px 18px;border-bottom:1px solid var(--soft);font-size:.77rem">
+          <span style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--stone2);width:58px;flex-shrink:0;padding-top:1px">Von</span>
+          <span style="color:var(--stone)">Emily · Gentle Redesign &lt;<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="452c2b232a0522202b31292037202120362c222b6b2120">[email&#160;protected]</a>&gt;</span>
+        </div>
+        <div style="display:flex;gap:8px;padding:9px 18px;font-size:.77rem">
+          <span style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--stone2);width:58px;flex-shrink:0;padding-top:1px">Betreff</span>
+          <span style="color:var(--ink);font-weight:500" id="cm-subject">—</span>
+        </div>
+      </div>
+      <!-- Body -->
+      <div style="padding:20px 18px">
+        <!-- Score inline -->
+        <div style="background:var(--cream);border:1px solid var(--border);padding:14px 16px;margin-bottom:16px;display:flex;gap:16px;align-items:center">
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-style:italic;line-height:1" id="cm-score-num">—</div>
+            <div style="font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);margin-top:2px">/ 100 Score</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:4px" id="cm-score-bars"></div>
+        </div>
+        <!-- Text -->
+        <div style="font-size:.82rem;line-height:1.78;color:var(--ink);white-space:pre-line;margin-bottom:14px" id="cm-body">—</div>
+        <!-- Priority list -->
+        <div style="margin-bottom:14px" id="cm-priorities"></div>
+        <!-- Closing -->
+        <div style="font-size:.82rem;line-height:1.78;color:var(--stone);white-space:pre-line;padding-top:14px;border-top:1px solid var(--soft);margin-bottom:16px" id="cm-closing">—</div>
+        <!-- Signature -->
+        <div style="font-size:.76rem;color:var(--stone2);line-height:1.8">
+          <strong style="display:block;color:var(--ink);font-size:.8rem">Emily</strong>
+          Gentle Redesign · Berlin · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f69f989099b6919398829a9384939293859f9198d89293">[email&#160;protected]</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hero-cta no-print" id="heroCta">
+  <div>
+    <div class="hc-title">Nächster Schritt: <em>Hero generieren.</em></div>
+    <div class="hc-sub">Basierend auf diesem Audit wird eine neue Hero-Sektion erstellt — fertig für das Cold Mail.</div>
+  </div>
+  <button class="btn-gen" id="btnGen" onclick="generateHero()">Hero-Sektion generieren →</button>
+  <div id="heroErrMsg" style="display:none;margin-top:10px;font-size:.78rem;color:#c0392b;background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.25);padding:10px 14px;"></div>
+</div>
+
+<div class="hero-output hidden no-print" id="heroOutput">
+  <div class="ho-hdr">
+    <div><div class="ho-kicker">Neue Hero-Sektion</div><div class="ho-title" id="hoTitle">Hero-Sektion</div></div>
+    <div class="ho-acts">
+      <button class="hbtn" onclick="openFs()">Vollbild ↗</button>
+      <button class="hbtn" onclick="downloadHero()">↓ Herunterladen</button>
+      <button class="hbtn gold" onclick="copyCode()">Code kopieren</button>
+    </div>
+  </div>
+  <div class="ho-tabs">
+    <button class="ho-tab active" onclick="switchTab('preview')">Live Preview</button>
+    <button class="ho-tab" onclick="switchTab('compare')">Vorher / Nachher</button>
+    <button class="ho-tab" onclick="switchTab('code')">HTML Code</button>
+  </div>
+  <div class="ho-panel active" id="hp-preview">
+    <div class="prev-wrap"><div class="prev-badge">Live Preview</div><iframe class="prev-iframe" id="prevIframe" title="Preview"></iframe></div>
+  </div>
+  <div class="ho-panel" id="hp-compare">
+    <div class="cmp-grid">
+      <div><div class="cmp-lbl bef">Vorher — Bestehend</div><div class="cmp-frame"><iframe class="cmp-iframe" id="befIframe" title="Vorher"></iframe></div></div>
+      <div><div class="cmp-lbl aft">Nachher — Gentle Redesign</div><div class="cmp-frame"><iframe class="cmp-iframe" id="aftIframe" title="Nachher"></iframe></div></div>
+    </div>
+    <div class="chg-list" id="chgList"></div>
+  </div>
+  <div class="ho-panel" id="hp-code">
+    <div class="code-lbl">HTML — Vollständige Hero-Sektion</div>
+    <div class="code-wrap"><textarea class="code-ta" id="codeTA" readonly></textarea><button class="code-cp" id="codeCp" onclick="copyCode()">Kopieren</button></div>
+  </div>
+</div>
+
+<!-- COLD MAIL ZUSAMMENFASSUNG -->
+
+<footer>
+  <div class="foot-logo">Gentle<span>.</span>Redesign</div>
+  <div class="foot-txt"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="056c6b636a4562606b71696077606160766c626b2b6160">[email&#160;protected]</a> · Berlin · gentleredesign.de</div>
+</footer>
+
+<div class="gen-overlay" id="genOv">
+  <div class="spinner"></div>
+  <div class="gen-ttl">Hero-Sektion wird <em>generiert…</em></div>
+  <div class="gen-steps">
+    <div class="gen-s" data-g="0">Audit-Report auswerten</div>
+    <div class="gen-s" data-g="1">Brand-Stil definieren</div>
+    <div class="gen-s" data-g="2">Design entwerfen</div>
+    <div class="gen-s" data-g="3">HTML &amp; CSS schreiben</div>
+    <div class="gen-s" data-g="4">Preview vorbereiten</div>
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const catMax={design:6,brand:5,hero:7,mobile:5,trust:5,seo:5,legal:4};
+const TOTAL=42;
+let brandData=null,heroCode='',beforeCode='';
+
+function toggle(cb){
+  cb.classList.toggle('on');cb.classList.remove('ai-on');
+  cb.closest('.item').querySelector('.item-lbl').classList.toggle('done',cb.classList.contains('on'));
+  update();
+}
+function update(){
+  const checked=document.querySelectorAll('.cb.on,.cb.ai-on').length;
+  document.getElementById('progTxt').textContent=checked+' / '+TOTAL;
+  Object.keys(catMax).forEach(cat=>{
+    const done=document.querySelectorAll('[data-cat="'+cat+'"] .cb.on,[data-cat="'+cat+'"] .cb.ai-on').length;
+    const score=Math.round((1-done/catMax[cat])*100);
+    document.getElementById('b-'+cat).style.width=score+'%';
+    document.getElementById('p-'+cat).textContent=score+'%';
+    const badge=document.getElementById('csb-'+cat);
+    if(badge){badge.textContent=score+'/100';badge.style.color=score>=75?'#1e8449':score>=50?'#d35400':'#c0392b';badge.classList.add('show');}
+  });
+  const overall=Math.round((1-checked/TOTAL)*100);
+  document.getElementById('scoreDisplay').textContent=overall+' / 100';
+  const unc=[...document.querySelectorAll('.cb:not(.on):not(.ai-on)')];
+  const top=[...unc.filter(c=>c.closest('.item').querySelector('.tag.c')).slice(0,3),
+             ...unc.filter(c=>c.closest('.item').querySelector('.tag.h')).slice(0,2),
+             ...unc.filter(c=>c.closest('.item').querySelector('.tag.m')).slice(0,1)].slice(0,6);
+  const list=document.getElementById('priList');
+  if(!top.length&&checked>0){list.innerHTML='<div class="pri-empty">Alle Probleme identifiziert ✓ — bereit für die Hero-Generierung!</div>';return;}
+  if(!top.length){list.innerHTML='<div class="pri-empty">URL eingeben für automatischen Audit — oder Probleme manuell abhaken.</div>';return;}
+  list.innerHTML=top.map((cb,i)=>{
+    const item=cb.closest('.item'),lbl=item.querySelector('.item-lbl').textContent,sub=item.querySelector('.item-sub').textContent,tag=item.querySelector('.tag');
+    const cls=tag.classList.contains('c')?'lc':tag.classList.contains('h')?'lh':'lm';
+    return'<div class="pri-item '+cls+'"><div class="pri-n">'+(i+1)+'.</div><div class="pri-body"><strong>'+lbl+'</strong><em>'+sub+'</em></div></div>';
+  }).join('');
+}
+function resetAll(){
+  document.querySelectorAll('.cb').forEach(cb=>{cb.classList.remove('on','ai-on');cb.closest('.item').querySelector('.item-lbl').classList.remove('done');});
+  document.querySelectorAll('.item-note').forEach(n=>{n.textContent='';n.classList.remove('show');});
+  ['bName','bCat','bProduct','bAudience','bUSP','bTone','bToneRec'].forEach(id=>{const e=document.getElementById(id);e.value='';e.classList.remove('ai');});
+  document.getElementById('aiSum').classList.remove('show');
+  document.getElementById('brandTag').classList.remove('show');
+  document.getElementById('tbUrl').classList.remove('show');
+  document.getElementById('reportPanel').classList.remove('open');
+  document.getElementById('scoreSummary').classList.remove('show');
+  document.querySelectorAll('.cat-score-badge').forEach(b=>b.classList.remove('show'));
+  document.getElementById('coldMailInline').style.display='none';
+  setSt('','',false);setSp(-1);update();
+}
+function setSt(t,tx,sh=true){
+  const s=document.getElementById('ss'),d=document.getElementById('sdot'),x=document.getElementById('stxt');
+  if(!sh){s.classList.remove('show');return;}
+  s.classList.add('show');d.className='sdot'+(t==='run'?' run':t==='ok'?' ok':t==='err'?' err':'');x.textContent=tx;
+}
+function setSp(a){
+  const e=document.getElementById('sp');
+  if(a<0){e.classList.remove('show');return;}
+  e.classList.add('show');
+  for(let i=1;i<=5;i++){const s=document.getElementById('sp'+i);s.className='sp'+(i-1<a?' done':i-1===a?' run':'');}
+}
+const slp=ms=>new Promise(r=>setTimeout(r,ms));
+function ifw(f,h){const b=new Blob([h],{type:'text/html'});f.src=URL.createObjectURL(b);}
+
+async function runAudit(){
+  const url=document.getElementById('scanUrl').value.trim();
+  if(!url||!url.startsWith('http')){setSt('err','Bitte gültige URL eingeben (https://...)');return;}
+  const btn=document.getElementById('scanBtn');btn.disabled=true;btn.textContent='Analysiert…';
+  document.getElementById('tbUrl').textContent=url;document.getElementById('tbUrl').classList.add('show');
+  setSt('run','Verbinde mit KI-Analyse…');setSp(0);
+  try{
+    await slp(300);setSp(1);setSt('run','Brand & Branche werden erkannt…');
+    await slp(500);setSp(2);setSt('run','42 Checkpunkte werden analysiert…');
+    const res=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',max_tokens:3500,
+      system:`Du bist Senior Website-Audit-Experte bei Gentle Redesign Berlin. Antworte NUR mit JSON (keine Backticks):\n{"brand":{"name":"...","category":"...","product":"...","audience":"...","usp":"...","currentTone":"...","recommendedTone":"...","heroHeadline":"neue Headline max 8 Wörter","heroSub":"neue Subline max 15 Wörter","heroCTA":"CTA 3-5 Wörter","colorScheme":"light oder dark","primaryColor":"#hex","accentColor":"#hex"},"findings":{"design_1":{"checked":true,"note":"spezifisch oder null"},"design_2":{"checked":false,"note":null},"design_3":{"checked":true,"note":"..."},"design_4":{"checked":false,"note":null},"design_5":{"checked":true,"note":"..."},"design_6":{"checked":true,"note":"..."},"brand_1":{"checked":false,"note":null},"brand_2":{"checked":true,"note":"..."},"brand_3":{"checked":true,"note":"..."},"brand_4":{"checked":false,"note":null},"brand_5":{"checked":true,"note":"..."},"hero_1":{"checked":true,"note":"..."},"hero_2":{"checked":true,"note":"..."},"hero_3":{"checked":true,"note":"..."},"hero_4":{"checked":true,"note":"..."},"hero_5":{"checked":false,"note":null},"hero_6":{"checked":true,"note":"..."},"hero_7":{"checked":false,"note":null},"mobile_1":{"checked":true,"note":"..."},"mobile_2":{"checked":false,"note":null},"mobile_3":{"checked":true,"note":"..."},"mobile_4":{"checked":false,"note":null},"mobile_5":{"checked":true,"note":"..."},"trust_1":{"checked":true,"note":"..."},"trust_2":{"checked":true,"note":"..."},"trust_3":{"checked":false,"note":null},"trust_4":{"checked":true,"note":"..."},"trust_5":{"checked":false,"note":null},"seo_1":{"checked":true,"note":"..."},"seo_2":{"checked":true,"note":"..."},"seo_3":{"checked":false,"note":null},"seo_4":{"checked":true,"note":"..."},"seo_5":{"checked":true,"note":"..."},"legal_1":{"checked":false,"note":null},"legal_2":{"checked":true,"note":"..."},"legal_3":{"checked":true,"note":"..."},"legal_4":{"checked":false,"note":null}},"summary":"2-3 Sätze spezifisch.","topOpportunity":"Wichtigster Quick-Win in einem Satz.","improvements":[{"before":"...","after":"..."},{"before":"...","after":"..."},{"before":"...","after":"..."},{"before":"...","after":"..."},{"before":"...","after":"..."}]}\n"checked:true"=Problem existiert. Spezifisch zu dieser URL.`,
+      messages:[{role:'user',content:'Analysiere: '+url+'\n\nErkenne Brand, Branche, Zielgruppe. Fülle alle 42 Checkpunkte konkret aus.'}]
+    })});
+    if(!res.ok)throw new Error('API '+res.status);
+    setSp(3);setSt('run','Score wird berechnet…');
+    const data=await res.json();
+    const raw=data.content.map(b=>b.type==='text'?b.text:'').join('');
+    const clean=raw.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    let result;
+    try{
+      result=JSON.parse(clean);
+    }catch(e1){
+      // Try extracting JSON object with regex
+      const m=raw.match(/\{[\s\S]*\}/);
+      if(!m)throw new Error('Keine gültige JSON-Antwort. API-Antwort: '+raw.slice(0,200));
+      try{result=JSON.parse(m[0]);}
+      catch(e2){throw new Error('JSON Parse Fehler: '+e2.message);}
+    }
+    if(!result.heroHTML)throw new Error('heroHTML fehlt in der Antwort');
+    brandData=result;setSp(4);setSt('run','Checkliste wird ausgefüllt…');
+    await applyResults(result);
+    const found=document.querySelectorAll('.cb.on,.cb.ai-on').length;
+    setSt('ok','Audit abgeschlossen — '+found+' Probleme bei '+(result.brand?.name||url));
+    btn.disabled=false;btn.textContent='Erneut analysieren →';
+    await slp(300);document.getElementById('aiSum').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(err){setSt('err','Fehler: '+err.message);setSp(-1);btn.disabled=false;btn.textContent='Analysieren →';}
+}
+async function applyResults(r){
+  const b=r.brand||{};
+  [['bName',b.name],['bCat',b.category],['bProduct',b.product],['bAudience',b.audience],['bUSP',b.usp],['bTone',b.currentTone],['bToneRec',b.recommendedTone]].forEach(([id,val])=>{if(val){const e=document.getElementById(id);e.value=val;e.classList.add('ai');}});
+  document.getElementById('brandTag').classList.add('show');
+  const findings=r.findings||{};const keys=Object.keys(findings);
+  for(let i=0;i<keys.length;i++){
+    const key=keys[i],f=findings[key],item=document.querySelector('[data-key="'+key+'"]');
+    if(!item)continue;item.classList.add('scanning');await slp(30);item.classList.remove('scanning');
+    if(f&&f.checked){const cb=item.querySelector('.cb');cb.classList.add('ai-on');item.querySelector('.item-lbl').classList.add('done');}
+    if(f&&f.note){const n=item.querySelector('.item-note');n.textContent='→ '+f.note;n.classList.add('show');}
+    if(i%7===0)await slp(50);
+  }
+  update();
+  // Inline score bar
+  const catLabels={design:'Design',brand:'Brand',hero:'Hero',mobile:'Mobile',trust:'Trust',seo:'SEO',legal:'Recht'};
+  const overall=Math.round((1-document.querySelectorAll('.cb.on,.cb.ai-on').length/TOTAL)*100);
+  const col=overall>=75?'#1e8449':overall>=50?'#d35400':'#c0392b';
+  const grades=[[85,'Sehr gut'],[70,'Gut'],[50,'Mittel'],[30,'Schwach'],[0,'Kritisch']];
+  const grade=grades.find(([t])=>overall>=t)[1];
+  document.getElementById('sosNum').textContent=overall;document.getElementById('sosNum').style.color=col;
+  document.getElementById('sosGrade').textContent=grade;document.getElementById('sosGrade').style.color=col;document.getElementById('sosGrade').style.borderColor=col+'44';
+  document.getElementById('catBarsRow').innerHTML=Object.entries(catMax).map(([cat])=>{
+    const done=document.querySelectorAll('[data-cat="'+cat+'"] .cb.on,[data-cat="'+cat+'"] .cb.ai-on').length;
+    const score=Math.round((1-done/catMax[cat])*100);const c=score>=75?'#1e8449':score>=50?'#d35400':'#c0392b';
+    return'<div class="cb-col"><div class="cb-track"><div class="cb-fill" style="height:'+score+'%;background:'+c+'"></div></div><div class="cb-val" style="color:'+c+'">'+score+'</div><div class="cb-lbl">'+catLabels[cat]+'</div></div>';
+  }).join('');
+  document.getElementById('scoreSummary').classList.add('show');
+  document.getElementById('aiSumTitle').textContent='KI-Analyse: '+(b.name||'Website');
+  document.getElementById('aiSumText').textContent=r.summary||'';
+  if(r.topOpportunity){document.getElementById('aiSumOppText').textContent=r.topOpportunity;document.getElementById('aiSumOpp').style.display='block';}
+  document.getElementById('aiSum').classList.add('show');
+  document.getElementById('reportPanel').classList.add('open');
+  // Pre-build cold mail based on audit (hero will update it later)
+  setTimeout(buildColdMail, 600);
+}
+async function generateHero(){
+  const btn=document.getElementById('btnGen');btn.disabled=true;
+  const errDiv=document.getElementById('heroErrMsg');if(errDiv)errDiv.style.display='none';
+  const b=brandData?.brand||{};
+  const nm=document.getElementById('bName').value||b.name||'Unbekannt';
+  const problems=[...document.querySelectorAll('.cb.on,.cb.ai-on')].map(cb=>cb.closest('.item').querySelector('.item-lbl').textContent).slice(0,10).join('\n- ');
+  const ov=document.getElementById('genOv');ov.classList.add('active');
+  const gs=i=>document.querySelectorAll('.gen-s').forEach((e,j)=>{e.classList.toggle('done',j<i);e.classList.toggle('active',j===i);});
+  gs(0);await slp(300);gs(1);await slp(400);gs(2);
+  try{
+    const res=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',max_tokens:4000,
+      system:`Antworte NUR mit reinem JSON ohne Markdown-Wrapper. Format: {"heroHTML":"komplettes HTML-Dokument mit eingebettetem CSS und Google Fonts, min-height:100vh, professionell, responsive, starke Headline, klarer CTA","beforeHTML":"alte Website Simulation","changes":[{"before":"Problem","after":"Lösung"},{"before":"Problem","after":"Lösung"},{"before":"Problem","after":"Lösung"}]}`,
+      messages:[{role:'user',content:'Erstelle Hero-Sektion für:\nName: '+nm+'\nBranche: '+(document.getElementById('bCat').value||b.category||'')+'\nProdukt: '+(document.getElementById('bProduct').value||b.product||'')+'\nZielgruppe: '+(document.getElementById('bAudience').value||b.audience||'')+'\nUSP: '+(document.getElementById('bUSP').value||b.usp||'')+'\nTonalität: '+(document.getElementById('bToneRec').value||b.recommendedTone||'modern')+'\nPrimärfarbe: '+(b.primaryColor||'#333')+'\nAkzentfarbe: '+(b.accentColor||'#B8923E')+'\nHeadline-Vorschlag: "'+(b.heroHeadline||'')+'"\nSubline: "'+(b.heroSub||'')+'"\nCTA: "'+(b.heroCTA||'Jetzt starten')+'"\n\nProbleme die gelöst werden sollen:\n- '+problems}]
+    })});
+    if(!res.ok)throw new Error('API '+res.status);gs(3);
+    const data=await res.json();
+    const raw=data.content.map(x=>x.type==='text'?x.text:'').join('');
+    const clean=raw.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    let result;
+    try{
+      result=JSON.parse(clean);
+    }catch(e1){
+      // Try extracting JSON object with regex
+      const m=raw.match(/\{[\s\S]*\}/);
+      if(!m)throw new Error('Keine gültige JSON-Antwort. API-Antwort: '+raw.slice(0,200));
+      try{result=JSON.parse(m[0]);}
+      catch(e2){throw new Error('JSON Parse Fehler: '+e2.message);}
+    }
+    if(!result.heroHTML)throw new Error('heroHTML fehlt in der Antwort');
+    gs(4);heroCode=result.heroHTML||'';beforeCode=result.beforeHTML||fbef(nm);
+    await slp(300);ov.classList.remove('active');
+    document.getElementById('hoTitle').textContent=nm+' — Neue Hero-Sektion';
+    ifw(document.getElementById('prevIframe'),heroCode);
+    ifw(document.getElementById('aftIframe'),heroCode);
+    ifw(document.getElementById('befIframe'),beforeCode);
+    document.getElementById('codeTA').value=heroCode;
+    document.getElementById('chgList').innerHTML=(result.changes||[]).map(c=>'<div class="chg-row"><div class="chg-arr">→</div><div class="chg-text"><strong>'+c.after+'</strong><span>'+c.before+'</span></div></div>').join('');
+    const out=document.getElementById('heroOutput');out.classList.remove('hidden');out.scrollIntoView({behavior:'smooth',block:'start'});
+    btn.disabled=false;btn.textContent='Hero neu generieren →';
+    // Auto-download
+    setTimeout(downloadHero, 600);
+    // Auto-build cold mail
+    setTimeout(buildColdMail, 800);
+  }catch(err){
+    ov.classList.remove('active');
+    btn.disabled=false;
+    btn.textContent='Hero-Sektion generieren →';
+    console.error('Hero generation error:', err);
+    // Show error inline instead of alert
+    const errDiv=document.getElementById('heroErrMsg');
+    if(errDiv){errDiv.textContent='Fehler: '+err.message+' — Bitte erneut versuchen.';errDiv.style.display='block';}
+  }
+}
+function fbef(n){return'<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#f0f0f0;color:#333}nav{background:#fff;padding:12px 24px;border-bottom:2px solid #ccc;display:flex;align-items:center;justify-content:space-between}.logo{font-size:17px;font-weight:bold}.nl{display:flex;gap:14px}.nl a{font-size:12px;color:#555;text-decoration:none}.hero{padding:48px 32px;background:#fff;text-align:center;border-bottom:1px solid #ddd}.badge{display:inline-block;background:#fff3cd;color:#856404;font-size:9px;padding:3px 8px;border:1px solid #ffc107;margin-bottom:12px}h1{font-size:24px;font-weight:bold;margin-bottom:9px;line-height:1.3}p{font-size:13px;color:#666;max-width:480px;margin:0 auto 20px;line-height:1.55}.cta{background:#337ab7;color:#fff;padding:9px 22px;border:none;font-size:13px;cursor:pointer;border-radius:3px}</style></head><body><nav><div class="logo">'+n+'</div><div class="nl"><a href="#">Über uns</a><a href="#">Leistungen</a><a href="#">Kontakt</a></div></nav><div class="hero"><div class="badge">⚠ Veraltetes Design · Generischer CTA · Kein Wertversprechen</div><h1>Willkommen bei '+n+'</h1><p>Wir sind Ihr zuverlässiger Partner für professionelle Lösungen. Seit vielen Jahren bieten wir erstklassigen Service.</p><button class="cta">Mehr erfahren</button></div></body></html>';}
+function switchTab(t){
+  document.querySelectorAll('.ho-tab').forEach((e,i)=>e.classList.toggle('active',['preview','compare','code'][i]===t));
+  document.querySelectorAll('.ho-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('hp-'+t).classList.add('active');
+}
+function openFs(){if(!heroCode)return;window.open(URL.createObjectURL(new Blob([heroCode],{type:'text/html'})),'_blank');}
+function downloadHero(){
+  if(!heroCode)return;
+  const nm=(document.getElementById('bName').value||'hero').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  const filename=nm+'-hero-gentleredesign.html';
+  const blob=new Blob([heroCode],{type:'text/html'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function copyCode(){navigator.clipboard.writeText(heroCode).then(()=>{const b=document.getElementById('codeCp');b.textContent='Kopiert ✓';b.classList.add('copied');setTimeout(()=>{b.textContent='Kopieren';b.classList.remove('copied');},2500);});}
+document.getElementById('scanUrl').addEventListener('keydown',e=>{if(e.key==='Enter')runAudit();});
+
+// ─── Cold Mail inline ──────────────────────────────────────────────────────
+function buildColdMail(){
+  const nm=document.getElementById('bName').value||'Ihr Unternehmen';
+  const url=document.getElementById('scanUrl').value||'';
+  const domain=url.replace(/https?:\/\//,'').replace(/\/.*/,'');
+  const checked=document.querySelectorAll('.cb.on,.cb.ai-on').length;
+  const overall=Math.round((1-checked/TOTAL)*100);
+  const col=overall>=75?'#1e8449':overall>=50?'#d35400':'#c0392b';
+  const grade=overall>=70?'gut aufgestellt':overall>=50?'mit Potenzial':'mit erheblichem Verbesserungspotenzial';
+
+  // Top problems (kritisch + hoch, max 5)
+  const critItems=[...document.querySelectorAll('.cb.on,.cb.ai-on')].filter(cb=>cb.closest('.item').querySelector('.tag.c')).map(cb=>({lbl:cb.closest('.item').querySelector('.item-lbl').textContent,sev:'c'}));
+  const highItems=[...document.querySelectorAll('.cb.on,.cb.ai-on')].filter(cb=>cb.closest('.item').querySelector('.tag.h')).map(cb=>({lbl:cb.closest('.item').querySelector('.item-lbl').textContent,sev:'h'}));
+  const topProbs=[...critItems,...highItems].slice(0,5);
+
+  // Fill inline card
+  document.getElementById('cm-to').textContent='inhaber@'+(domain||'ihre-domain.de');
+  document.getElementById('cm-subject').textContent='Ihre Website '+nm+' — wir haben sie analysiert (Score: '+overall+'/100)';
+  document.getElementById('cm-score-num').textContent=overall;
+  document.getElementById('cm-score-num').style.color=col;
+
+  // Mini score bars
+  const catLabels={design:'Design',brand:'Brand',hero:'Hero',mobile:'Mobile',trust:'Trust',seo:'SEO',legal:'Recht'};
+  document.getElementById('cm-score-bars').innerHTML=Object.entries(catMax).map(([cat])=>{
+    const done=document.querySelectorAll('[data-cat="'+cat+'"] .cb.on,[data-cat="'+cat+'"] .cb.ai-on').length;
+    const s=Math.round((1-done/catMax[cat])*100);const c=s>=75?'#1e8449':s>=50?'#d35400':'#c0392b';
+    return'<div style="display:grid;grid-template-columns:52px 1fr 26px;gap:6px;align-items:center"><span style="font-size:.6rem;color:#7A7670">'+catLabels[cat]+'</span><div style="height:2px;background:rgba(0,0,0,.07)"><div style="width:'+s+'%;height:100%;background:'+c+'"></div></div><span style="font-size:.6rem;color:'+c+';text-align:right">'+s+'</span></div>';
+  }).join('');
+
+  document.getElementById('cm-body').textContent='Guten Tag,\n\nich habe mir Ihre Website '+(domain?'('+domain+') ':'')+' genauer angeschaut und direkt ein konkretes Update vorbereitet — so könnte '+nm+' in 48 Stunden aussehen.\n\nUnser Audit hat '+checked+' Verbesserungspunkte identifiziert. Ihr aktueller Website-Score: '+overall+'/100 — '+grade+'.';
+
+  document.getElementById('cm-priorities').innerHTML=topProbs.length?
+    '<div style="margin-bottom:8px;font-size:.74rem;font-weight:500;color:#141210">Konkret identifizierte Punkte:</div>'+
+    topProbs.map(p=>'<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:.78rem;color:#5A5650;align-items:flex-start"><span style="color:#B8923E;flex-shrink:0;margin-top:2px">→</span><span>'+p.lbl+'</span></div>').join(''):'';
+
+  document.getElementById('cm-closing').textContent='In 10 Minuten zeige ich Ihnen, wie die neue Version aussieht — mit Ihren Inhalten, Ihrer Marke. Kein Verkaufsgespräch.\n\nPasst Ihnen diese Woche ein kurzer Call?';
+
+  document.getElementById('coldMailInline').style.display='block';
+}
+
+function copyColdMail(){
+  const subject=document.getElementById('cm-subject').textContent;
+  const body=document.getElementById('cm-body').textContent;
+  const probs=[...document.querySelectorAll('#cm-priorities div[style*="border-bottom"]')].map(el=>'  → '+el.textContent.trim()).join('\n');
+  const closing=document.getElementById('cm-closing').textContent;
+  const full='Betreff: '+subject+'\n\n'+body+(probs?'\n\n'+probs:'')+'\n\n'+closing+'\n\n--\nEmily\nGentle Redesign · Berlin\ninfo@gentleredesign.de · gentleredesign.de';
+  navigator.clipboard.writeText(full).then(()=>{
+    const btn=document.getElementById('cmCopyBtn');const orig=btn.textContent;
+    btn.textContent='Kopiert ✓';btn.style.background='#1e8449';
+    setTimeout(()=>{btn.textContent=orig;btn.style.background='#141210';},2500);
+  });
+}
+</script>
+</body>
+</html>
