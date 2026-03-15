@@ -842,8 +842,7 @@ async function generateHero(){
     if(errDiv){errDiv.textContent='Fehler: '+err.message+' — Bitte erneut versuchen.';errDiv.style.display='block';}
   }
 }
-function fbef(n){return'<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#f0f0f0;color:#333}nav{background:#fff;padding:12px 24px;border-bottom:2px solid #ccc;display:flex;align-items:center;justify-content:space-between}.logo{font-size:17px;font-weight:bold}.nl{display:flex;gap:14px}.nl a{font-size:12px;color:#555;text-decoration:none}.hero{padding:48px 32px;background:#fff;text-align:center;border-bottom:1px solid #ddd}.badge{display:inline-block;background:#fff3cd;color:#856404;font-size:9px;padding:3px 8px;border:1px solid #ffc107;margin-bottom:12px}h1{font-size:24px;font-weight:bold;margin-bottom:9px;line-height:1.3}p{font-size:13px;color:#666;max-width:480px;margin:0 auto 20px;line-height:1.55}.cta{background:#337ab7;color:#fff;padding:9px 22px;border:none;font-size:13px;cursor:pointer;border-radius:3px}</style><script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-</head><body><nav><div class="logo">'+n+'</div><div class="nl"><a href="#">Über uns</a><a href="#">Leistungen</a><a href="#">Kontakt</a></div></nav><div class="hero"><div class="badge">⚠ Veraltetes Design · Generischer CTA · Kein Wertversprechen</div><h1>Willkommen bei '+n+'</h1><p>Wir sind Ihr zuverlässiger Partner für professionelle Lösungen. Seit vielen Jahren bieten wir erstklassigen Service.</p><button class="cta">Mehr erfahren</button></div></body></html>';}
+function fbef(n){return'<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#f0f0f0;color:#333}nav{background:#fff;padding:12px 24px;border-bottom:2px solid #ccc;display:flex;align-items:center;justify-content:space-between}.logo{font-size:17px;font-weight:bold}.nl{display:flex;gap:14px}.nl a{font-size:12px;color:#555;text-decoration:none}.hero{padding:48px 32px;background:#fff;text-align:center;border-bottom:1px solid #ddd}.badge{display:inline-block;background:#fff3cd;color:#856404;font-size:9px;padding:3px 8px;border:1px solid #ffc107;margin-bottom:12px}h1{font-size:24px;font-weight:bold;margin-bottom:9px;line-height:1.3}p{font-size:13px;color:#666;max-width:480px;margin:0 auto 20px;line-height:1.55}.cta{background:#337ab7;color:#fff;padding:9px 22px;border:none;font-size:13px;cursor:pointer;border-radius:3px}</style></head><body><nav><div class="logo">'+n+'</div><div class="nl"><a href="#">Über uns</a><a href="#">Leistungen</a><a href="#">Kontakt</a></div></nav><div class="hero"><div class="badge">⚠ Veraltetes Design · Generischer CTA · Kein Wertversprechen</div><h1>Willkommen bei '+n+'</h1><p>Wir sind Ihr zuverlässiger Partner für professionelle Lösungen. Seit vielen Jahren bieten wir erstklassigen Service.</p><button class="cta">Mehr erfahren</button></div></body></html>';}
 function switchTab(t){
   document.querySelectorAll('.ho-tab').forEach((e,i)=>e.classList.toggle('active',['preview','compare','code'][i]===t));
   document.querySelectorAll('.ho-panel').forEach(p=>p.classList.remove('active'));
@@ -853,299 +852,119 @@ function openFs(){if(!heroCode)return;window.open(URL.createObjectURL(new Blob([
 function downloadHero(){
   if(!heroCode)return;
   const nm=(document.getElementById('bName').value||'hero').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-  const filename=nm+'-hero-gentleredesign.html';
-  const blob=new Blob([heroCode],{type:'text/html'});
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=filename;
+  a.href=URL.createObjectURL(new Blob([heroCode],{type:'text/html'}));
+  a.download=nm+'-hero-gentleredesign.html';
   a.click();
-  URL.revokeObjectURL(a.href);
 }
-function copyCode(){navigator.clipboard.writeText(heroCode).then(()=>{const b=document.getElementById('codeCp');b.textContent='Kopiert ✓';b.classList.add('copied');setTimeout(()=>{b.textContent='Kopieren';b.classList.remove('copied');},2500);});}
-
-// ─── PDF Download ──────────────────────────────────────────────────────────
 function downloadPDF(){
-  const { jsPDF } = window.jspdf;
-  if(!jsPDF){alert('PDF-Library lädt noch — bitte kurz warten.');return;}
-  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const W=210, M=18;
-  let y=20;
-
-  // Colors
-  const gold=[184,146,62];
-  const ink=[20,18,16];
-  const stone=[122,118,112];
-  const cream=[247,244,239];
-  const red=[176,58,46];
-  const orange=[202,111,30];
-  const green=[30,132,73];
-
-  function hex2rgb(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return[r,g,b];}
-  function scoreColor(s){return s>=75?green:s>=50?orange:red;}
-
-  // ── HEADER ──
-  doc.setFillColor(...ink);
-  doc.rect(0,0,W,42,'F');
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(20);
-  doc.setTextColor(255,255,255);
-  doc.text('Website Audit Report',M,16);
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...gold);
-  doc.text('Gentle Redesign · Berlin · gentleredesign.de',M,23);
-
-  // Brand name & URL
-  const bname = document.getElementById('bName')?.value||'';
-  const url = document.getElementById('scanUrl')?.value||'';
-  if(bname||url){
-    doc.setTextColor(200,200,200);
-    doc.setFontSize(8);
-    if(bname)doc.text(bname,M,30);
-    if(url)doc.text(url,bname?M+doc.getTextWidth(bname)+4:M,30);
-  }
-
-  // Overall score
+  if(!window.jspdf){alert('PDF-Library lädt noch — bitte kurz warten.');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,M=18;let y=20;
+  const gold=[184,146,62],ink=[20,18,16],stone=[122,118,112],red=[176,58,46],orange=[202,111,30],green=[30,132,73];
+  function sc(s){return s>=75?green:s>=50?orange:red;}
+  // Header
+  doc.setFillColor(20,18,16);doc.rect(0,0,W,44,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(20);doc.setTextColor(255,255,255);doc.text('Website Audit Report',M,16);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(184,146,62);doc.text('Gentle Redesign \u00b7 Berlin \u00b7 gentleredesign.de',M,24);
+  const bname=document.getElementById('bName')?.value||'';const url=document.getElementById('scanUrl')?.value||'';
+  if(bname){doc.setFontSize(8);doc.setTextColor(200,200,200);doc.text(bname,M,31);}
+  if(url){doc.setFontSize(7);doc.setTextColor(150,150,150);doc.text(url,M,37);}
   const checked=document.querySelectorAll('.cb.on,.cb.ai-on').length;
   const overall=Math.round((1-checked/42)*100);
-  const sc=scoreColor(overall);
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(28);
-  doc.setTextColor(...sc);
-  doc.text(overall+'/100',W-M,22,{align:'right'});
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(8);
-  doc.setTextColor(...gold);
-  doc.text('Audit Score',W-M,29,{align:'right'});
-  y=52;
-
-  // ── CATEGORY SCORES ──
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(10);
-  doc.setTextColor(...ink);
-  doc.text('Kategorie-Scores',M,y);
-  y+=6;
-
-  const cats={design:{label:'Design',max:6},brand:{label:'Brand',max:5},hero:{label:'Hero & Struktur',max:7},mobile:{label:'Mobile',max:5},trust:{label:'Trust',max:5},seo:{label:'SEO',max:5},legal:{label:'Rechtliches',max:4}};
-  const barW=W-M*2-30;
+  doc.setFont('helvetica','bold');doc.setFontSize(26);doc.setTextColor(...sc(overall));doc.text(overall+'/100',W-M,22,{align:'right'});
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(184,146,62);doc.text('Audit Score',W-M,29,{align:'right'});
+  y=54;
+  // Category bars
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(20,18,16);doc.text('Kategorie-Scores',M,y);y+=6;
+  const cats={design:{label:'Design',max:6},brand:{label:'Brand Identity',max:5},hero:{label:'Hero & Struktur',max:7},mobile:{label:'Mobile',max:5},trust:{label:'Trust & Conversion',max:5},seo:{label:'SEO & Technik',max:5},legal:{label:'Rechtliches',max:4}};
   Object.entries(cats).forEach(([cat,meta])=>{
     const done=document.querySelectorAll('[data-cat="'+cat+'"] .cb.on,[data-cat="'+cat+'"] .cb.ai-on').length;
-    const score=Math.round((1-done/meta.max)*100);
-    const col=scoreColor(score);
-    // Label
-    doc.setFont('helvetica','normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...stone);
-    doc.text(meta.label,M,y+3);
-    // Track
-    doc.setFillColor(220,218,214);
-    doc.rect(M+30,y,barW,3,'F');
-    // Fill
-    doc.setFillColor(...col);
-    doc.rect(M+30,y,barW*score/100,3,'F');
-    // Score
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...col);
-    doc.text(score+'%',W-M,y+3,{align:'right'});
+    const score=Math.round((1-done/meta.max)*100);const col=sc(score);const bw=W-M*2-26;
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(122,118,112);doc.text(meta.label,M,y+3);
+    doc.setFillColor(220,218,214);doc.rect(M+26,y,bw,3,'F');
+    doc.setFillColor(...col);doc.rect(M+26,y,bw*score/100,3,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...col);doc.text(score+'%',W-M,y+3,{align:'right'});
     y+=8;
   });
-  y+=4;
-
-  // ── DIVIDER ──
-  doc.setDrawColor(...gold);
-  doc.setLineWidth(0.3);
-  doc.line(M,y,W-M,y);
-  y+=8;
-
-  // ── TOP PROBLEMS ──
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(10);
-  doc.setTextColor(...ink);
-  doc.text('Identifizierte Probleme',M,y);
-  y+=6;
-
-  const sevColor={c:red,h:orange,m:gold};
-  const sevLabel={c:'Kritisch',h:'Hoch',m:'Mittel'};
-  const problems=[...document.querySelectorAll('.cb.on,.cb.ai-on')].map(cb=>{
+  y+=4;doc.setDrawColor(184,146,62);doc.setLineWidth(0.3);doc.line(M,y,W-M,y);y+=8;
+  // Problems
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(20,18,16);doc.text('Identifizierte Probleme ('+checked+' von 42)',M,y);y+=7;
+  const sevC={c:[176,58,46],h:[202,111,30],m:[184,146,62]};const sevL={c:'Kritisch',h:'Hoch',m:'Mittel'};
+  const probs=[...document.querySelectorAll('.cb.on,.cb.ai-on')].map(cb=>{
     const item=cb.closest('.item');
-    const lbl=item.querySelector('.item-lbl').textContent;
-    const note=item.querySelector('.item-note')?.textContent||'';
+    const lbl=item.querySelector('.item-lbl').textContent.trim();
+    const note=item.querySelector('.item-note')?.textContent?.trim()||'';
     const tag=item.querySelector('.tag');
     const sev=tag.classList.contains('c')?'c':tag.classList.contains('h')?'h':'m';
     return{lbl,note,sev};
-  }).sort((a,b)=>{const o={c:0,h:1,m:2};return o[a.sev]-o[b.sev];});
-
-  problems.slice(0,14).forEach((p,i)=>{
-    if(y>260){doc.addPage();y=20;}
-    const col=sevColor[p.sev]||stone;
-    // Severity dot
-    doc.setFillColor(...col);
-    doc.circle(M+2,y+1.5,1.5,'F');
-    // Label
-    doc.setFont('helvetica','normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(...ink);
-    doc.text(p.lbl,M+6,y+3);
-    // Sev badge
-    doc.setFontSize(6.5);
-    doc.setTextColor(...col);
-    doc.text(sevLabel[p.sev],W-M,y+3,{align:'right'});
-    y+=5.5;
-    // AI note if present
-    if(p.note&&p.note.trim().length>2){
-      doc.setFontSize(7);
-      doc.setTextColor(...stone);
-      const noteLines=doc.splitTextToSize(p.note,W-M*2-8);
-      noteLines.slice(0,1).forEach(line=>{
-        doc.text(line,M+6,y+2);
-        y+=4;
-      });
+  }).sort((a,b)=>({c:0,h:1,m:2})[a.sev]-({c:0,h:1,m:2})[b.sev]);
+  probs.forEach(p=>{
+    if(y>262){doc.addPage();y=20;}
+    doc.setFillColor(...sevC[p.sev]);doc.circle(M+2,y+1.5,1.5,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(20,18,16);doc.text(p.lbl,M+7,y+3);
+    doc.setFontSize(7);doc.setTextColor(...sevC[p.sev]);doc.text(sevL[p.sev],W-M,y+3,{align:'right'});
+    y+=6;
+    if(p.note&&p.note.replace('\u2192','').trim().length>2){
+      doc.setFontSize(7);doc.setTextColor(122,118,112);
+      doc.text(doc.splitTextToSize(p.note,W-M*2-10)[0],M+7,y+2);y+=4.5;
     }
   });
-
-  y+=4;
-  // ── DIVIDER ──
-  doc.setDrawColor(...gold);
-  doc.line(M,y,W-M,y);
-  y+=8;
-
-  // ── BRAND PROFILE ──
-  const bcat=document.getElementById('bCat')?.value;
-  const bprod=document.getElementById('bProd')||document.getElementById('bProduct');
-  const baud=document.getElementById('bAud')||document.getElementById('bAudience');
-  const busp=document.getElementById('bUSP');
-  const btoner=document.getElementById('bToneR')||document.getElementById('bToneRec');
-
-  if(bname||bcat){
-    if(y>240){doc.addPage();y=20;}
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(10);
-    doc.setTextColor(...ink);
-    doc.text('Brand-Profil',M,y);
-    y+=6;
-
-    const fields=[
-      ['Unternehmen',bname],
-      ['Branche',bcat],
-      ['Produkt',bprod?.value],
-      ['Zielgruppe',baud?.value],
-      ['USP',busp?.value],
-      ['Empf. Tonalität',btoner?.value],
-    ].filter(([,v])=>v&&v.trim());
-
-    fields.forEach(([label,val])=>{
-      if(y>270){doc.addPage();y=20;}
-      doc.setFont('helvetica','bold');
-      doc.setFontSize(8);
-      doc.setTextColor(...stone);
-      doc.text(label+':',M,y+3);
-      doc.setFont('helvetica','normal');
-      doc.setTextColor(...ink);
-      const lines=doc.splitTextToSize(val,W-M*2-28);
-      lines.slice(0,2).forEach((line,i)=>{doc.text(line,M+28,y+3+(i*4));});
-      y+=Math.min(lines.length,2)*4+2;
-    });
-    y+=4;
+  // Footer
+  const total=doc.internal.getNumberOfPages();
+  for(let i=1;i<=total;i++){
+    doc.setPage(i);doc.setFillColor(20,18,16);doc.rect(0,287,W,10,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(184,146,62);doc.text('Gentle Redesign \u00b7 Berlin \u00b7 info@gentleredesign.de',M,293);
+    doc.setTextColor(100,100,100);doc.text('Seite '+i+' / '+total,W-M,293,{align:'right'});
   }
-
-  // ── AI SUMMARY ──
-  const sumText=document.getElementById('aiSumText')?.textContent;
-  const sumOpp=document.getElementById('aiSumOppText')?.textContent||document.getElementById('aiSumOpp')?.textContent;
-  if(sumText&&sumText.trim()){
-    if(y>240){doc.addPage();y=20;}
-    doc.setFillColor(...cream);
-    const sumLines=doc.splitTextToSize(sumText,W-M*2-8);
-    const boxH=sumLines.length*4.5+12;
-    doc.rect(M,y,W-M*2,boxH,'F');
-    doc.setDrawColor(...gold);
-    doc.setLineWidth(0.5);
-    doc.rect(M,y,3,boxH,'F');
-    doc.setLineWidth(0.3);
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...gold);
-    doc.text('KI-Analyse',M+6,y+5);
-    doc.setFont('helvetica','normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...stone);
-    sumLines.forEach((line,i)=>{doc.text(line,M+6,y+10+i*4.5);});
-    y+=boxH+6;
-  }
-
-  // ── FOOTER ──
-  const pageCount=doc.internal.getNumberOfPages();
-  for(let i=1;i<=pageCount;i++){
-    doc.setPage(i);
-    doc.setFillColor(...ink);
-    doc.rect(0,287,W,10,'F');
-    doc.setFont('helvetica','normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...gold);
-    doc.text('Gentle Redesign · Berlin · info@gentleredesign.de · gentleredesign.de',M,293);
-    doc.setTextColor(100,100,100);
-    doc.text('Seite '+i+' / '+pageCount,W-M,293,{align:'right'});
-  }
-
-  // ── SAVE ──
-  const name=(document.getElementById('bName')?.value||'audit').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')||'website-audit';
-  doc.save(name+'-gentle-redesign-audit.pdf');
+  const fname=(document.getElementById('bName')?.value||'audit').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')||'website-audit';
+  doc.save(fname+'-gentle-redesign-audit.pdf');
 }
 
-document.getElementById('scanUrl').addEventListener('keydown',e=>{if(e.key==='Enter')runAudit();});
-
-// ─── Cold Mail inline ──────────────────────────────────────────────────────
 function buildColdMail(){
   const nm=document.getElementById('bName').value||'Ihr Unternehmen';
   const url=document.getElementById('scanUrl').value||'';
   const domain=url.replace(/https?:\/\//,'').replace(/\/.*/,'');
   const checked=document.querySelectorAll('.cb.on,.cb.ai-on').length;
-  const overall=Math.round((1-checked/TOTAL)*100);
+  const overall=Math.round((1-checked/42)*100);
   const col=overall>=75?'#1e8449':overall>=50?'#d35400':'#c0392b';
   const grade=overall>=70?'gut aufgestellt':overall>=50?'mit Potenzial':'mit erheblichem Verbesserungspotenzial';
-
-  // Top problems (kritisch + hoch, max 5)
-  const critItems=[...document.querySelectorAll('.cb.on,.cb.ai-on')].filter(cb=>cb.closest('.item').querySelector('.tag.c')).map(cb=>({lbl:cb.closest('.item').querySelector('.item-lbl').textContent,sev:'c'}));
-  const highItems=[...document.querySelectorAll('.cb.on,.cb.ai-on')].filter(cb=>cb.closest('.item').querySelector('.tag.h')).map(cb=>({lbl:cb.closest('.item').querySelector('.item-lbl').textContent,sev:'h'}));
+  const critItems=[...document.querySelectorAll('.cb.on,.cb.ai-on')].filter(cb=>cb.closest('.item').querySelector('.tag.c')).map(cb=>cb.closest('.item').querySelector('.item-lbl').textContent);
+  const highItems=[...document.querySelectorAll('.cb.on,.cb.ai-on')].filter(cb=>cb.closest('.item').querySelector('.tag.h')).map(cb=>cb.closest('.item').querySelector('.item-lbl').textContent);
   const topProbs=[...critItems,...highItems].slice(0,5);
-
-  // Fill inline card
   document.getElementById('cm-to').textContent='inhaber@'+(domain||'ihre-domain.de');
-  document.getElementById('cm-subject').textContent='Ihre Website '+nm+' — wir haben sie analysiert (Score: '+overall+'/100)';
+  document.getElementById('cm-subject').textContent='Ihre Website '+nm+' \u2014 wir haben sie analysiert (Score: '+overall+'/100)';
   document.getElementById('cm-score-num').textContent=overall;
   document.getElementById('cm-score-num').style.color=col;
-
-  // Mini score bars
   const catLabels={design:'Design',brand:'Brand',hero:'Hero',mobile:'Mobile',trust:'Trust',seo:'SEO',legal:'Recht'};
+  const catMax={design:6,brand:5,hero:7,mobile:5,trust:5,seo:5,legal:4};
   document.getElementById('cm-score-bars').innerHTML=Object.entries(catMax).map(([cat])=>{
     const done=document.querySelectorAll('[data-cat="'+cat+'"] .cb.on,[data-cat="'+cat+'"] .cb.ai-on').length;
-    const s=Math.round((1-done/catMax[cat])*100);const c=s>=75?'#1e8449':s>=50?'#d35400':'#c0392b';
-    return'<div style="display:grid;grid-template-columns:52px 1fr 26px;gap:6px;align-items:center"><span style="font-size:.6rem;color:#7A7670">'+catLabels[cat]+'</span><div style="height:2px;background:rgba(0,0,0,.07)"><div style="width:'+s+'%;height:100%;background:'+c+'"></div></div><span style="font-size:.6rem;color:'+c+';text-align:right">'+s+'</span></div>';
+    const s=Math.round((1-done/catMax[cat])*100);const c2=s>=75?'#1e8449':s>=50?'#d35400':'#c0392b';
+    return'<div style="display:grid;grid-template-columns:52px 1fr 26px;gap:6px;align-items:center"><span style="font-size:.6rem;color:#7A7670">'+catLabels[cat]+'</span><div style="height:2px;background:rgba(0,0,0,.07)"><div style="width:'+s+'%;height:100%;background:'+c2+'"></div></div><span style="font-size:.6rem;color:'+c2+';text-align:right">'+s+'</span></div>';
   }).join('');
-
-  document.getElementById('cm-body').textContent='Guten Tag,\n\nich habe mir Ihre Website '+(domain?'('+domain+') ':'')+' genauer angeschaut und direkt ein konkretes Update vorbereitet — so könnte '+nm+' in 48 Stunden aussehen.\n\nUnser Audit hat '+checked+' Verbesserungspunkte identifiziert. Ihr aktueller Website-Score: '+overall+'/100 — '+grade+'.';
-
-  document.getElementById('cm-priorities').innerHTML=topProbs.length?
-    '<div style="margin-bottom:8px;font-size:.74rem;font-weight:500;color:#141210">Konkret identifizierte Punkte:</div>'+
-    topProbs.map(p=>'<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:.78rem;color:#5A5650;align-items:flex-start"><span style="color:#B8923E;flex-shrink:0;margin-top:2px">→</span><span>'+p.lbl+'</span></div>').join(''):'';
-
-  document.getElementById('cm-closing').textContent='In 10 Minuten zeige ich Ihnen, wie die neue Version aussieht — mit Ihren Inhalten, Ihrer Marke. Kein Verkaufsgespräch.\n\nPasst Ihnen diese Woche ein kurzer Call?';
-
+  document.getElementById('cm-body').textContent='Guten Tag,\n\ních habe mir Ihre Website '+(domain?'('+domain+') ':'')+' genauer angeschaut und direkt ein konkretes Update vorbereitet \u2014 so k\xf6nnte '+nm+' in 48 Stunden aussehen.\n\nUnser Audit hat '+checked+' Verbesserungspunkte identifiziert. Ihr aktueller Website-Score: '+overall+'/100 \u2014 '+grade+'.';
+  document.getElementById('cm-priorities').innerHTML=topProbs.length?'<div style="margin-bottom:8px;font-size:.74rem;font-weight:500;color:#141210">Konkret identifizierte Punkte:</div>'+topProbs.map(p=>'<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:.78rem;color:#5A5650;align-items:flex-start"><span style="color:#B8923E;flex-shrink:0">\u2192</span><span>'+p+'</span></div>').join(''):'';
+  document.getElementById('cm-closing').textContent='In 10 Minuten zeige ich Ihnen, wie die neue Version aussieht \u2014 mit Ihren Inhalten, Ihrer Marke. Kein Verkaufsgespr\xe4ch.\n\nPasst Ihnen diese Woche ein kurzer Call?';
   document.getElementById('coldMailInline').style.display='block';
 }
 
 function copyColdMail(){
   const subject=document.getElementById('cm-subject').textContent;
   const body=document.getElementById('cm-body').textContent;
-  const probs=[...document.querySelectorAll('#cm-priorities div[style*="border-bottom"]')].map(el=>'  → '+el.textContent.trim()).join('\n');
+  const probs=[...document.querySelectorAll('#cm-priorities div[style*="border-bottom"]')].map(el=>'  \u2192 '+el.textContent.trim()).join('\n');
   const closing=document.getElementById('cm-closing').textContent;
-  const full='Betreff: '+subject+'\n\n'+body+(probs?'\n\n'+probs:'')+'\n\n'+closing+'\n\n--\nEmily\nGentle Redesign · Berlin\ninfo@gentleredesign.de · gentleredesign.de';
+  const full='Betreff: '+subject+'\n\n'+body+(probs?'\n\n'+probs:'')+'\n\n'+closing+'\n\n--\nEmily\nGentle Redesign \u00b7 Berlin\ninfo@gentleredesign.de \u00b7 gentleredesign.de';
   navigator.clipboard.writeText(full).then(()=>{
     const btn=document.getElementById('cmCopyBtn');const orig=btn.textContent;
-    btn.textContent='Kopiert ✓';btn.style.background='#1e8449';
+    btn.textContent='Kopiert \u2713';btn.style.background='#1e8449';
     setTimeout(()=>{btn.textContent=orig;btn.style.background='#141210';},2500);
   });
 }
+
+function copyCode(){navigator.clipboard.writeText(heroCode).then(()=>{const b=document.getElementById('codeCp');b.textContent='Kopiert ✓';b.classList.add('copied');setTimeout(()=>{b.textContent='Kopieren';b.classList.remove('copied');},2500);});}
+document.getElementById('scanUrl').addEventListener('keydown',e=>{if(e.key==='Enter')runAudit();});
 </script>
 </body>
 </html>
