@@ -744,7 +744,6 @@ async function runAudit(){
       try{result=JSON.parse(m[0]);}
       catch(e2){throw new Error('JSON Parse Fehler: '+e2.message);}
     }
-    if(!result.heroHTML)throw new Error('heroHTML fehlt in der Antwort');
     brandData=result;setSp(4);setSt('run','Checkliste wird ausgefüllt…');
     await applyResults(result);
     const found=document.querySelectorAll('.cb.on,.cb.ai-on').length;
