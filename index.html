@@ -800,7 +800,9 @@ async function generateHero(){
   try{
     const res=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       model:'claude-sonnet-4-20250514',max_tokens:4000,
-      system:`Antworte NUR mit reinem JSON ohne Markdown-Wrapper. Format: {"heroHTML":"komplettes HTML-Dokument mit eingebettetem CSS und Google Fonts, min-height:100vh, professionell, responsive, starke Headline, klarer CTA","beforeHTML":"alte Website Simulation","changes":[{"before":"Problem","after":"Lösung"},{"before":"Problem","after":"Lösung"},{"before":"Problem","after":"Lösung"}]}`,
+      system:`Du erstellst Hero-Sektionen als JSON. Antworte AUSSCHLIESSLICH mit diesem JSON-Format, kein Text davor oder danach, keine Backticks:
+{"heroHTML":"HIER DAS KOMPLETTE HTML-DOKUMENT","beforeHTML":"HIER DIE ALTE WEBSITE SIMULATION","changes":[{"before":"altes Problem 1","after":"neue Lösung 1"},{"before":"altes Problem 2","after":"neue Lösung 2"},{"before":"altes Problem 3","after":"neue Lösung 3"}]}
+für heroHTML: vollständiges HTML mit <style> inline, Google Fonts @import erlaubt, min-height:100vh, professionell, responsive, starke Headline, prominenter CTA-Button, markengerecht.`,
       messages:[{role:'user',content:'Erstelle Hero-Sektion für:\nName: '+nm+'\nBranche: '+(document.getElementById('bCat').value||b.category||'')+'\nProdukt: '+(document.getElementById('bProduct').value||b.product||'')+'\nZielgruppe: '+(document.getElementById('bAudience').value||b.audience||'')+'\nUSP: '+(document.getElementById('bUSP').value||b.usp||'')+'\nTonalität: '+(document.getElementById('bToneRec').value||b.recommendedTone||'modern')+'\nPrimärfarbe: '+(b.primaryColor||'#333')+'\nAkzentfarbe: '+(b.accentColor||'#B8923E')+'\nHeadline-Vorschlag: "'+(b.heroHeadline||'')+'"\nSubline: "'+(b.heroSub||'')+'"\nCTA: "'+(b.heroCTA||'Jetzt starten')+'"\n\nProbleme die gelöst werden sollen:\n- '+problems}]
     })});
     if(!res.ok)throw new Error('API '+res.status);gs(3);
